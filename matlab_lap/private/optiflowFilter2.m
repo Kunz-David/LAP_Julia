@@ -1,49 +1,49 @@
 function [uest,coeffs,err]=optiflowFilter2(I1,I2,basis, K1, W)
 % Function implements the standard Local All-Pass Filter (LAP) algorithm
-% (i.e. no multi-scale). Given input images I1 and I2, and basis (the set 
-% of filters), the function calculates the optical flow between the two 
+% (i.e. no multi-scale). Given input images I1 and I2, and basis (the set
+% of filters), the function calculates the optical flow between the two
 % images. Currently designed to use grayscale images.
 %
 % Inputs:
 %           I1      -> Input image 1, gray scale, s1 by s2 array
 %           I2      -> Input image 2, gray scale, s1 by s2 array
 %           basis   -> Elements of the filter basis. M by N array, where N
-%                   is the number of basis elements and M = R^2 where is 
+%                   is the number of basis elements and M = R^2 where is
 %                   the filter is R by R in size.
 %           K1     -> Size of filter basis
 %           W      -> Size of the local window used in the algorithm.
 %
 % Outputs:
-%           uest    -> Estimate of the optical flow as a complex number
+%           uest    -> Estimate of the optical flow as a complex number 
 %           coeffs  -> Estimated coefficients for each filter basis
 %           err     -> Error for each pixel: ||p(-x)*I2(x) - p(x)*I1(x)||^2
-% 
+%
 % Version 1.
-% DATE     : 21st October 2016 
+% DATE     : 21st October 2016
 % AUTHOR   : Christopher Gilliam (dr.christopher.gilliam@ieee.org) and
 %            Thierry Blu
-% 
+%
 % Version 2.
 %           - Window size can be defined independently of the filter size.
 %           - Separable 1D filter implementation for large filter sizes
 %               assuming N = 3.
 %           - Set unreliable edge pixels to nans
-% DATE     : 4th January  2017 
+% DATE     : 4th January  2017
 %
 % Code relates to following papers:
 % 1) C. Gilliam and T. Blu, "Local All-Pass Geometric Deformations", IEEE
 %   Trans. Image Processing, 2016, under review.
-% 2) C. Gilliam and T. Blu, "Local All-Pass Filters for Optical Flow 
-%   Estimation", in Proc. IEEE Int. Conf. on Acoustics, Speech & Signal 
+% 2) C. Gilliam and T. Blu, "Local All-Pass Filters for Optical Flow
+%   Estimation", in Proc. IEEE Int. Conf. on Acoustics, Speech & Signal
 %   Processing (ICASSP 2015), Brisbane, Australia, April 2015, pp. 1533-1537.
-% 3) T. Blu, P. Moulin and C. Gilliam, "Approximation Order of the LAP 
-%   Optical Flow Algorithm?" in Proc. IEEE Int. Conf. Image Processing 
+% 3) T. Blu, P. Moulin and C. Gilliam, "Approximation Order of the LAP
+%   Optical Flow Algorithm?" in Proc. IEEE Int. Conf. Image Processing
 %   (ICIP 2015), Quebec City, Canada, September 2015, pp. 48-52.
 %
 
 % Obtain image size:
 [s1,s2]=size(I1);
-[M,N]=size(basis); 
+[M,N]=size(basis);
 
 if nargin < 4,
     % set default values of K1 and W
@@ -67,7 +67,7 @@ end
 % break the filter into separable 1D filters (allows for faster implementation):
 if K >= 64 || L  >= 64 && N == 3,
     FT_trig = 1;
-    
+
     % Calculate separable filters from basis:
     sigma=(K1 + 2)/4;
     g=@(x,s)exp(-x.*x/2/s^2);
@@ -91,19 +91,19 @@ end
 
 K1=W(1);         % block size first dimension
 K2=W(2);              % block size second dimension
-    
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% filtering with the basis %%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 II=[];
-            
+
 for n=1:N
     if FT_trig == 0,
         % standard 2D filtering
         B1=basis(:,:,n);
         B2=B1(end:-1:1,end:-1:1);
         J=imfilter(I2,B2,'symmetric')-imfilter(I1,B1,'symmetric');
-    else    
+    else
         switch n
             case 1
                 % Instead of using a 2D gaussian kernel,
@@ -123,8 +123,8 @@ for n=1:N
                 B1 = imfilter(I2, reshape(Gdix,[length(Gdix) 1]),'symmetric');
                 B1 = imfilter(shiftdim(B1,1), reshape(Giy,[length(Giy) 1]),'symmetric').';
         end
-        J=B1-A1;    
-    end    
+        J=B1-A1;
+    end
     II=[II J(:)];
 end
 J=II(:,1);
@@ -133,7 +133,7 @@ J=II(:,1);
 %%%%%%%%% matrices needed %%%%%%%%%
 %%%%%% in the linear system %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            
+
 A=zeros(N-1,N-1,s1*s2);
 b=zeros(N-1,s1*s2);
 for k=1:N-1
@@ -147,7 +147,7 @@ end
 % Initialise filter coefficients:
 coeffs=zeros(s1*s2,N-1);
 
-% Perform Gauss elimination on all pixels in parallel: 
+% Perform Gauss elimination on all pixels in parallel:
 for k=1:(N-1)
     for l=(k+1):(N-1)
         c=A(l,k,:)./A(k,k,:);
@@ -176,7 +176,7 @@ if nargout>2
     err=zeros(s1,s2);
     err(:)=sum(coeffs.*II,2);
 end
-            
+
 k0=(-K:K)'*ones(1,2*L+1);
 l0=ones(2*K+1,1)*(-L:L);
 basis=reshape(basis,[(2*K+1)*(2*L+1) N]);
@@ -207,12 +207,12 @@ s1=evalin('caller','s1');
 s2=evalin('caller','s2');
 FT_trig = evalin('caller','FT_trig');
 
-if FT_trig == 1,    
+if FT_trig == 1,
     F1 = ones(1,K1);
     F1 = F1./norm(F1(:),1);
     F2 = ones(1,K2);
     F2 = F2./norm(F2(:),1);
-   
+
     J = imfilter(reshape(I,s1,s2), reshape(F1,[length(F1) 1]),'symmetric');
     J = imfilter(shiftdim(J,1), reshape(F2,[length(F2) 1]),'symmetric').';
 

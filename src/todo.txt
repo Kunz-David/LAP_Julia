@@ -1,0 +1,6 @@
+TODO:
+
+- loading table .csv files --> CSV.jl
+- matlab dark colorscheme --> complicated
+- more complex tests julia
+- gassian in julia
