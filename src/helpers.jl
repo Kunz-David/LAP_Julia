@@ -28,15 +28,15 @@ end
 """
     rescale_intensities(image1, image2)
 
-Rescales `image1` and `image2` intensities to span the whole [0, 255].
+Rescales `image1` and `image2` intensities to span the whole [0, 1].
 """
 function rescale_intensities(image1, image2)
 
     max_intensity = maximum([image1[:]; image2[:]])
     min_intensity = minimum([image1[:]; image2[:]])
 
-    image1 = (image1 .- min_intensity)./(max_intensity - min_intensity).*255;
-    image2 = (image2 .- min_intensity)./(max_intensity - min_intensity).*255;
+    image1 = (image1 .- min_intensity)./(max_intensity - min_intensity).*1;
+    image2 = (image2 .- min_intensity)./(max_intensity - min_intensity).*1;
 
     return image1, image2
 end
