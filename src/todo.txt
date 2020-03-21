@@ -1,6 +1,10 @@
 TODO:
 
-- send email
 
 - finish adding base to single lap function OTHERWISE finished
 - test single lap
+
+- prihlasit se na Magistra
+
+- add base 3 to single lap
+- edit for k and l on line 104

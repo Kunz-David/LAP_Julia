@@ -1,3 +1,6 @@
+module lap
+export single_lap, polyfilter_lap
+
 using ImageFiltering
 
 # Function implements the standard Local All-Pass Filter (LAP) algorithm
@@ -21,7 +24,7 @@ using ImageFiltering
 #
 
 """
-    single_l_ap(image_1, image_2, base_filters, )
+    single_lap(image_1, image_2, base_filters, )
 
 # input:
 _- `image_1` ... grayscale image 1
@@ -38,51 +41,46 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     use_one_dim_filters = false
 
     # Prepare filters:
-    # check if its better to filter with 2 1D filters
-    if filter_num == 3 && filter_size >= 129
+    # 1D
+    use_one_dim_filters = true
 
-        use_one_dim_filters = true
+    # Calculate separable filters from basis:
+    sigma = (filter_half_size + 2) / 4
+    centered_inds = ImageFiltering.centered(-filter_half_size:filter_half_size)
+    gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
+    gaus_der = gaus .* centered_inds .* (-1)/sigma^2
+    gaus_der_flip = reverse(gaus_der, dims=1)
 
-        # Calculate separable filters from basis:
-        sigma = (filter_half_size + 2) / 4
-        centered_inds = ImageFiltering.centered(-filter_half_size:filter_half_size)
-        gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
-        gaus_der = gaus .* centered_inds .* (-1)/sigma^2
-        gaus_der_flip = reverse(gaus_der, dims=1)
+    # OLD way:
+    # gaussian(x,s) = exp.(-x.*x/2/s^2)
+    # K0=ceil([K,L]); --> this is filter half size
+    # Gx = gaus(-filter_half_size:filter_half_size, sigma)
+    # Gdx = (-filter_half_size:filter_half_size) .* Gx
+    # Gx = Gx ./ sum(Gx)
+    # Gdx = Gdx ./ sum((-filter_half_size:filter_half_size) .* Gdx)
+    # Gdix = reverse(Gdx, dims=1)
 
-        # OLD way:
-        # gaussian(x,s) = exp.(-x.*x/2/s^2)
-        # K0=ceil([K,L]); --> this is filter half size
-        # Gx = gaus(-filter_half_size:filter_half_size, sigma)
-        # Gdx = (-filter_half_size:filter_half_size) .* Gx
-        # Gx = Gx ./ sum(Gx)
-        # Gdx = Gdx ./ sum((-filter_half_size:filter_half_size) .* Gdx)
-        # Gdix = reverse(Gdx, dims=1)
-    elseif filter_num == 3
-        basis = zeros(filter_size, filter_size, filter_num)
-        #basis[:, :, 1] =
-        #TODO
-    elseif filter_num == 6
-        basis = zeros(filter_size, filter_size, filter_num)
-        #TODO
-    end
+    # prepare 2D filter basis for later use:
+    basis = zeros(filter_size, filter_size, filter_num)
 
     # dif = (image forward - image backward) of each filter
-    dif = zeros(filter_size, filter_size, filter_num)
+    dif = zeros(image_size[1], image_size[2], filter_num)
 
-    if use_one_dim_filters == true
+    if filter_num == 3
         # temporary place to store filtered images
-        tmp_filtered_1 = simil_ar(image_1)
+        tmp_filtered_1 = similar(image_1)
         tmp_filtered_2 = similar(image_2)
 
         # basis 1 - (gaus, gaus) both forward and backward
         kernf_1 = kernelfactors((gaus, gaus))
+        basis[:, :, 1] = broadcast(*, kernf_1...)
         imfilter!(tmp_filtered_1, image_1, kernf_1, "symmetric")
         imfilter!(tmp_filtered_2, image_2, kernf_1, "symmetric")
         dif[:, :, 1] = tmp_filtered_2 - tmp_filtered_1
 
         # basis 2 - (gaus, gaus_der_flip) as forward, (gaus, gaus_der) as backward
         kernf_2f = kernelfactors((gaus, gaus_der_flip))
+        basis[:, :, 2] = broadcast(*, kernf_2f...)
         imfilter!(tmp_filtered_1, image_1, kernf_2f, "symmetric")
         kernf_2b = kernelfactors((gaus, gaus_der))
         imfilter!(tmp_filtered_2, image_2, kernf_2b, "symmetric")
@@ -90,6 +88,7 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
 
         # basis 3 - (gaus_der_flip, gaus) as forward, (gaus_der, gaus) as backward
         kernf_3f = kernelfactors((gaus_der_flip, gaus))
+        basis[:, :, 3] = broadcast(*, kernf_3f...)
         imfilter!(tmp_filtered_1, image_1, kernf_3f, "symmetric")
         kernf_3b = kernelfactors((gaus_der, gaus))
         imfilter!(tmp_filtered_2, image_2, kernf_3b, "symmetric")
@@ -102,8 +101,8 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     A = zeros(filter_num-1, filter_num-1, prod(image_size))
     b = zeros(filter_num-1, prod(image_size))
 
-    for k in [2:filter_num]
-        for l in [k:filter_num]
+    for k in 2:filter_num
+        for l in k:filter_num
             @views window_sum!(A[k, l, :], dif[:, k] .* dif[:, l], image_size, window_size)
             A[l, k, :] = A[k, l, :]
         end
@@ -121,7 +120,6 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     all_coeffs[border_mask, :] = NaN
 
     k = (-filter_half_size:filter_half_size)
-    #basis = reshape(basis, (:, filter_num))
 
     # Get the displacement vector field from the filters
     u1_top = zeros(image_size);
@@ -142,6 +140,8 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     # dont use estimations whose displacement is larger than the filter_half_size
     displacement_mask = real(u_est).^2 + imag(u_est).^2
     u_est[displacement_mask > filter_half_size^2] = NaN;
+
+    return u_est, all_coeffs
 
 end
 
@@ -187,8 +187,16 @@ function window_sum!(filter_result, pixels, image_size, window_size)
     ones_arr_1 = ones(window_size[1])
     ones_arr_2 = ones(window_size[2])
     ones_kernel = kernelfactors((ones_arr_1, ones_arr_2))
+    println("before")
+
+    println(size(filter_result))
+    println(image_size)
+    #@assert length(pixels) == image_size[1]*image_size[2]
+    #@assert size(filter_result) == image_size
+
     # filtering gets a sum of pixels of window size in each coord
-    imfilter!(filter_result, reshape(pixels, image_size), ones_kernel, "symmetric")
+    ImageFiltering.imfilter!(reshape(filter_result, image_size), reshape(pixels, image_size), ones_kernel, "symmetric")
+    println("after")
     #return filtered_result[:]
 end
 

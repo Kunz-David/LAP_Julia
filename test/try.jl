@@ -38,6 +38,8 @@ mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
 chessboard = repeat(mini_board, outer=(convert(Integer,(board_size/2)), convert(Integer,(board_size/2))))
 chessboard = repeat(mini_board, outer=(2, 2))
 
+imshow(chessboard)
+
 # imshow(chessboard);
 
 #---
@@ -214,3 +216,37 @@ sum(transpose(A) * k)
 dot(A[:], repeat(k, outer=11))
 
 B = A[:]
+
+
+#---
+
+
+
+
+u_est, coeffs = single_lap(chessboard, chessboard, 3, 15, [15, 15])
+
+
+#---
+
+ones_arr_1 = ones(window_size[1])
+ones_arr_2 = ones(window_size[2])
+ones_kernel = kernelfactors((ones_arr_1, ones_arr_2))
+# filtering gets a sum of pixels of window size in each coord
+
+pixels = reshape(chessboard, (:, 1))
+image_size = size(chessboard)
+window_size = [15, 15]
+
+filter_result = similar(chessboard)
+
+ImageFiltering.imfilter!(filter_result, reshape(pixels, image_size), shit, "symmetric")
+
+imshow(filter_result)
+
+#---
+
+include("../src/lap.jl")
+
+lap.window_sum!(filter_result, pixels, image_size, window_size)
+
+imshow(filter_result)
