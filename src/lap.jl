@@ -42,11 +42,8 @@ end
 """
 function single_lap(image_1, image_2, filter_num, filter_size, window_size)
 
-    print("testing attention please.")
     image_size = size(image_1)
     filter_half_size = round(Int, (filter_size - 1) / 2)
-
-
 
     # Prepare filters:
     # 1D
@@ -145,10 +142,10 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
 
     u_est = 2 .* ((u1_top ./ u1_bot) .+ (im .* u2_top ./ u2_bot));
 
-    # TODO: debug this part
     # dont use estimations whose displacement is larger than the filter_half_size
-    # displacement_mask = real(u_est).^2 + imag(u_est).^2
-    # u_est[displacement_mask .> filter_half_size^2] .= NaN;
+    displacement = real(u_est).^2 + imag(u_est).^2
+    displacement_mask = displacement .> filter_half_size^2
+    u_est[displacement_mask] .= NaN + NaN*im;
 
     return u_est, all_coeffs
 

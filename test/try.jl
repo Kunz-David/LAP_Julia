@@ -341,9 +341,12 @@ for k in 2:size(chess_warp_f)[1]
     end
 end
 
-u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, 3, [3, 3])
+filter_half_size = 2
+filter_size = filter_half_size * 2 + 1
 
-u_est[50, 50]
+u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_size, [filter_size, filter_size])
+
+u_est[10, 10]
 real(u_est)
 imag(u_est)
 

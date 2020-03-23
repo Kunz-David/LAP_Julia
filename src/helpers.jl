@@ -57,3 +57,12 @@ function display_flow(u_est, skip_count)
     PyPlot.quiver(trimmed_real, trimmed_imag)
     gcf()
 end
+
+
+function maxim(a)
+    maximum(x->isnan(x) ? -Inf : x, a)
+end
+
+function minim(a)
+    minimum(x->isnan(x) ? +Inf : x, a)
+end
