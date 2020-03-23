@@ -6,5 +6,16 @@ TODO:
 
 - prihlasit se na Magistra
 
-- add base 3 to single lap
-- edit for k and l on line 104
+- make a smooth displacement field funciton in julia
+  - can use Augmentor
+
+- add base 6 to single lap
+- debug this part:    dont use estimations whose displacement is larger than the filter_half_size
+- the problem with repl speed is using ImageView -> find alternative to viewing images in julia
+
+
+
+
+
+The way to use revise:
+startup jl as is, then using LAP_julia. DONE

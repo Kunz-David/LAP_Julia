@@ -4,7 +4,7 @@ using .LAP_julia
 using Test, Images, Colors
 using FileIO
 using CSV
-using Plots, ImageView
+using Plots, ImageView: imshow
 
 #--- load random gray ANHIR image
 base_path = "/Users/MrTrololord/Google_Drive/cvut/bakalarka/anhir/"
@@ -30,7 +30,7 @@ gray_target = Gray.(target_in)
 
 #--- load chessboard image1
 
-tile_size = 50
+tile_size = 5
 board_size = 8 # must be even
 mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
               ones(tile_size, tile_size) zeros(tile_size, tile_size)]
@@ -115,7 +115,6 @@ imgfilt1_prealloc = similar(chessboard)
 imshow(imgfilt1_prealloc)
 surface(imgfilt1_prealloc)
 
-
 #---
 
 
@@ -186,17 +185,27 @@ one[:] = two
 
 #--- pad with zeros
 
-A = ones(3, 4)
+using ImageFiltering
 
-B = padarray(A, Fill(0,(4,4),(4,4)))
-
-parent(B)
-
-image_size = (100, 100);
+image_size = size(chessboard)
 filter_half_size = 5;
 
-border = parent(padarray(ones(image_size.-(2*filter_half_size)), Fill(0,(filter_half_size, filter_half_size),(filter_half_size, filter_half_size))))
-border
+ones(image_size.-(2*filter_half_size))
+
+border_mask = parent(padarray(ones(image_size.-(2*filter_half_size)), Fill(NaN, (filter_half_size, filter_half_size),(filter_half_size, filter_half_size))))
+
+new_board = chessboard .* border_mask
+
+imshow(new_board)
+
+all_coeffs = ones(broadcast((*), image_size...), 3)
+
+new_coeffs = all_coeffs .* reshape(border_mask, (:, 1))
+
+imshow(reshape(new_coeffs[:, 1], image_size))
+
+imshow(reshape(chessboard[border .== 1.0] .= NaN, (170, 170)))
+
 
 #---
 
@@ -250,3 +259,94 @@ include("../src/lap.jl")
 lap.window_sum!(filter_result, pixels, image_size, window_size)
 
 imshow(filter_result)
+
+#---
+
+uv = zeros(size(chessboard)..., 2)
+uv[:, :, 1] = real(u_est)
+uv[:, :, 2] = imag(u_est)
+
+Plots.quiver([1,2,3], [1,2,3], quiver=([NaN,1,1],[NaN,2,3]))
+
+
+
+u_est, coeffs = single_lap(chessboard, chessboard, 3, 15, [15, 15])
+
+p1 = figure()
+uv_flow = zeros(size(u_est)..., 2)
+uv_flow[:, :, 1] = real(u_est)
+uv_flow[:, :, 2] = imag(u_est)
+
+skip_count = 20
+n = skip_count
+
+trimmed_real = zeros(size(uv_flow[:,:,1]))
+trimmed_real[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 1]
+trimmed_imag = zeros(size(uv_flow[:,:,2]))
+trimmed_imag[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 2]
+
+PyPlot.quiver(trimmed_real, trimmed_imag)
+gcf()
+
+
+#---
+using FileIO: load
+
+board_path = "/Users/MrTrololord/Google_Drive/cvut/bakalarka/PolyFilter_LAP/test_boards/"
+
+chess_norm = load(board_path * "chessboard.png")
+chess_warp = load(board_path * "chess_warp.png")
+
+
+chess_norm_f = Float32.(chess_norm)
+chess_warp_f = Float32.(chess_warp)
+
+
+
+u_est, coeffs = single_lap(chess_norm_f, chess_warp_f, 3, 15, [15, 15])
+
+using LinearAlgebra: qr
+
+qr([1 1; 1 1], Val(true)) \ [1; 1]
+
+#--- TEST single_lap
+using PyPlot: quiver, gcf, figure
+
+# *************************
+# 1) MATLAB RANDOM FLOW
+# *************************
+board_path = "/Users/MrTrololord/Google_Drive/cvut/bakalarka/PolyFilter_LAP/test_boards/"
+
+# load chessboards from matlab generated flow
+chess_norm = load(board_path * "chessboard.png")
+chess_warp = load(board_path * "chess_warp.png")
+
+chess_norm_f = Float32.(chess_norm)
+chess_warp_f = Float32.(chess_warp)
+
+
+u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, 15, [15, 15])
+
+# *************************
+# 2) ONE PIXEL IMAGE SHIFT
+# *************************
+
+chess_norm = chessboard
+chess_norm_f = Float32.(chess_norm)
+
+chess_warp_f = copy(chess_norm_f)
+for k in 2:size(chess_warp_f)[1]
+    for l in 2:size(chess_warp_f)[2]
+        chess_warp_f[k-1, l-1] = chess_warp_f[k, l]
+    end
+end
+
+u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, 3, [3, 3])
+
+u_est[50, 50]
+real(u_est)
+imag(u_est)
+
+p1 = figure()
+quiver(real(u_est), imag(u_est))
+gcf()

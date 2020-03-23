@@ -1,7 +1,12 @@
 module lap
 export single_lap, polyfilter_lap
 
-using ImageFiltering
+using ImageFiltering: Fill, KernelFactors.gaussian, centered, kernelfactors, imfilter!, padarray
+using LinearAlgebra: qr
+
+function test()
+    print("testing r   eviseakdkd")
+end
 
 # Function implements the standard Local All-Pass Filter (LAP) algorithm
 # (i.e. no multi-scale). Given input images I1 and I2, and basis (the set
@@ -27,18 +32,21 @@ using ImageFiltering
     single_lap(image_1, image_2, base_filters, )
 
 # input:
-_- `image_1` ... grayscale image 1
+- `image_1` ... grayscale image 1
 - `image_2` ... grayscale image 2
-- `filter_num` ... ?? IS IT EVEN NEEDED HERE? NO, WILL CALL A FUNCTION
-- `window_size` ... size of local window
+- `filter_num` ... number of basis filters used (so far only =3 implemented)
 - `filter_size` ... filter has size: `filter_size` \times `filter_size`
+- `window_size` ... size of local window (list of 2 ints)
+
 
 """
 function single_lap(image_1, image_2, filter_num, filter_size, window_size)
 
+    print("testing attention please.")
     image_size = size(image_1)
-    filter_half_size = (filter_size - 1) / 2
-    use_one_dim_filters = false
+    filter_half_size = round(Int, (filter_size - 1) / 2)
+
+
 
     # Prepare filters:
     # 1D
@@ -46,8 +54,8 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
 
     # Calculate separable filters from basis:
     sigma = (filter_half_size + 2) / 4
-    centered_inds = ImageFiltering.centered(-filter_half_size:filter_half_size)
-    gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
+    centered_inds = centered(-filter_half_size:filter_half_size)
+    gaus = gaussian(sigma, filter_size)
     gaus_der = gaus .* centered_inds .* (-1)/sigma^2
     gaus_der_flip = reverse(gaus_der, dims=1)
 
@@ -101,12 +109,12 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     A = zeros(filter_num-1, filter_num-1, prod(image_size))
     b = zeros(filter_num-1, prod(image_size))
 
-    for k in 2:filter_num
-        for l in k:filter_num
-            @views window_sum!(A[k, l, :], dif[:, k] .* dif[:, l], image_size, window_size)
+    for k in 1:filter_num-1
+        for l in k:filter_num-1
+            @views window_sum!(A[k, l, :], dif[:, k+1] .* dif[:, l+1], image_size, window_size)
             A[l, k, :] = A[k, l, :]
         end
-        @views window_sum!(b[k, :], dif[:, k] .* dif[:, 1] .* (-1), image_size, window_size)
+        @views window_sum!(b[k, :], dif[:, k+1] .* dif[:, 1] .* (-1), image_size, window_size)
     end
 
     # Perform Gauss elimination on all pixels in parallel:
@@ -116,8 +124,8 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     all_coeffs = [ones(prod(image_size)) coeffs]
 
     # make a border mask. Is 0 if its in a border of filter_half_size size.
-    border_mask = parent(padarray(ones(image_size.-(2*filter_half_size)), Fill(0, (filter_half_size, filter_half_size),(filter_half_size, filter_half_size))))
-    all_coeffs[border_mask, :] = NaN
+    border_mask = parent(padarray(ones(image_size.-(2*filter_half_size)), Fill(NaN, (filter_half_size, filter_half_size),(filter_half_size, filter_half_size))))
+    @views all_coeffs = all_coeffs .* reshape(border_mask, (:, 1))
 
     k = (-filter_half_size:filter_half_size)
 
@@ -135,11 +143,12 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
         @views u2_bot[:] = u2_bot[:] + sum(basis[:, :, n]) .* all_coeffs[:, n];
     end
 
-    u_est = 2 .* ((u1_top ./ u1_bot) .+ (i .* u2_top ./ u2_bot));
+    u_est = 2 .* ((u1_top ./ u1_bot) .+ (im .* u2_top ./ u2_bot));
 
+    # TODO: debug this part
     # dont use estimations whose displacement is larger than the filter_half_size
-    displacement_mask = real(u_est).^2 + imag(u_est).^2
-    u_est[displacement_mask > filter_half_size^2] = NaN;
+    # displacement_mask = real(u_est).^2 + imag(u_est).^2
+    # u_est[displacement_mask .> filter_half_size^2] .= NaN;
 
     return u_est, all_coeffs
 
@@ -174,7 +183,8 @@ function multi_mat_div(A, b)
     res = zeros(size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
     for k in axes(A)[3]
-        @views res[:, k] = A[:, :, k] \ b[:, k]
+        @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
+        qr([1 1; 1 1], Val(true))
     end
     return transpose(res)
 end
@@ -187,16 +197,9 @@ function window_sum!(filter_result, pixels, image_size, window_size)
     ones_arr_1 = ones(window_size[1])
     ones_arr_2 = ones(window_size[2])
     ones_kernel = kernelfactors((ones_arr_1, ones_arr_2))
-    println("before")
-
-    println(size(filter_result))
-    println(image_size)
-    #@assert length(pixels) == image_size[1]*image_size[2]
-    #@assert size(filter_result) == image_size
 
     # filtering gets a sum of pixels of window size in each coord
-    ImageFiltering.imfilter!(reshape(filter_result, image_size), reshape(pixels, image_size), ones_kernel, "symmetric")
-    println("after")
+    imfilter!(reshape(filter_result, image_size), reshape(pixels, image_size), ones_kernel, "symmetric")
     #return filtered_result[:]
 end
 

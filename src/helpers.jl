@@ -40,3 +40,20 @@ function rescale_intensities(image1, image2)
 
     return image1, image2
 end
+
+function display_flow(u_est, skip_count)
+    p1 = figure()
+    uv_flow = zeros(size(u_est)..., 2)
+    uv_flow[:, :, 1] = real(u_est)
+    uv_flow[:, :, 2] = imag(u_est)
+
+    n = skip_count
+
+    trimmed_real = zeros(size(uv_flow[:,:,1]))
+    trimmed_real[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 1]
+    trimmed_imag = zeros(size(uv_flow[:,:,2]))
+    trimmed_imag[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 2]
+
+    PyPlot.quiver(trimmed_real, trimmed_imag)
+    gcf()
+end
