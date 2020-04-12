@@ -1,19 +1,23 @@
 TODO:
 
 
-- test single lap
+- Start writing
+  - napsat o single_lap
+
+- test how to run imfilter, what alg to use?
+
 
 - make a smooth displacement field funciton in julia
   - can use Augmentor
 
 - add base 6 to single lap
 
-- the problem with repl speed is using ImageView -> find alternative to viewing images in julia
+- test how the size of the filter affects the quality of a single_lap run
 
 
+How to debug:
+- Juno.@enter
 
 
-
-The way to use revise:
-startup jl as is, then using LAP_julia. DONE
-and call lap like this: "u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, 15, [15, 15])"
+How to make pyplot work:
+- after start: using PyPlot, then using LAP_julia 3x ---> include("src/go.jl")

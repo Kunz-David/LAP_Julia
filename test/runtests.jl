@@ -1,8 +1,8 @@
 
 
 using .LAP_julia
-using Test, Images, Colors
-using FileIO
+using Test
+using FileIO, Images, Colors
 using CSV
 
 base_path = "/Users/MrTrololord/Google_Drive/cvut/bakalarka/anhir/"
@@ -39,4 +39,13 @@ end
         @test size(LAP_julia.pad_images(im1, im2)[1]) <= (k+m-1, l+n-1)
         @test size(LAP_julia.pad_images(im1, im2)[1]) == ((k<m) ? m : k, (l<n) ? n : l)
     end
+end
+
+@testset "inpaint" begin
+    u = ones(10,10) .+ 2im .* ones(10,10);
+    nan_u = u
+    nan_u[3:8, 3:8] .= NaN .+ NaN .* 1im;
+    LAP_julia.inpaint.inpaint_nans!(nan_u)
+    @test all(nan_u .== u)
+    @test any(isnan.(nan_u)) == false
 end

@@ -3,6 +3,9 @@ uuid = "797d5b5c-2e9a-429f-9c9f-727808915e33"
 authors = ["David Kunz"]
 version = "0.1.0"
 
+[deps]
+PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+
 [compat]
 julia = "1.3.1"
 

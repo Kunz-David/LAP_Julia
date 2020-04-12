@@ -1,11 +1,12 @@
 module lap
 export single_lap, polyfilter_lap
 
-using ImageFiltering: Fill, KernelFactors.gaussian, centered, kernelfactors, imfilter!, padarray
+using LAP_julia
+using ImageFiltering: Fill, KernelFactors.gaussian, centered, kernelfactors, imfilter!, padarray, Pad
 using LinearAlgebra: qr
 
 function test()
-    print("testing r   eviseakdkd")
+    print("testing r   evise     akdkd")
 end
 
 # Function implements the standard Local All-Pass Filter (LAP) algorithm
@@ -29,21 +30,23 @@ end
 #
 
 """
-    single_lap(image_1, image_2, base_filters, )
+    function single_lap(image_1, image_2, filter_num, filter_half_size, window_size)
 
 # input:
 - `image_1` ... grayscale image 1
 - `image_2` ... grayscale image 2
 - `filter_num` ... number of basis filters used (so far only =3 implemented)
-- `filter_size` ... filter has size: `filter_size` \times `filter_size`
-- `window_size` ... size of local window (list of 2 ints)
+- `filter_half_size` ... (filter_size = 2*filter_half_size + 1) filter size: `filter_size` \times `filter_size`
+- `window_size` ... size of local window (list of 2 ints) usually same as filter_size
 
-
+# output:
+- `u_est` ... a complex matrix of size of `image_1` which is the displacment of `image_1` and `image_2`
+- `all_coeffs` ... cofficients of the basis filters for each pixel
 """
-function single_lap(image_1, image_2, filter_num, filter_size, window_size)
+function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, window_size)
 
     image_size = size(image_1)
-    filter_half_size = round(Int, (filter_size - 1) / 2)
+    filter_size = 2 * filter_half_size + 1
 
     # Prepare filters:
     # 1D
@@ -121,7 +124,9 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     all_coeffs = [ones(prod(image_size)) coeffs]
 
     # make a border mask. Is 0 if its in a border of filter_half_size size.
-    border_mask = parent(padarray(ones(image_size.-(2*filter_half_size)), Fill(NaN, (filter_half_size, filter_half_size),(filter_half_size, filter_half_size))))
+    window_half_size = Int64.((window_size .- 1) ./ 2)
+    border_mask = parent(padarray(ones((image_size .- (2 .* window_half_size))...),
+                    Fill(NaN, window_half_size, window_half_size)))
     @views all_coeffs = all_coeffs .* reshape(border_mask, (:, 1))
 
     k = (-filter_half_size:filter_half_size)
@@ -133,46 +138,135 @@ function single_lap(image_1, image_2, filter_num, filter_size, window_size)
     u2_bot = zeros(image_size);
 
     for n in 1:filter_num
-        @views u1_top[:] = u1_top[:] - sum(transpose(basis[:, :, n]) * k) .* all_coeffs[:, n];
-        @views u1_bot[:] = u1_bot[:] + sum(basis[:, :, n]) .* all_coeffs[:, n];
+        @views u1_top[:] = u1_top[:] .- sum(transpose(basis[:, :, n]) * k) .* all_coeffs[:, n];
+        @views u1_bot[:] = u1_bot[:] .+ sum(basis[:, :, n]) .* all_coeffs[:, n];
 
-        @views u2_top[:] = u2_top[:] - sum(basis[:, :, n] * k) .* all_coeffs[:, n];
-        @views u2_bot[:] = u2_bot[:] + sum(basis[:, :, n]) .* all_coeffs[:, n];
+        @views u2_top[:] = u2_top[:] .- sum(basis[:, :, n] * k) .* all_coeffs[:, n];
+        @views u2_bot[:] = u2_bot[:] .+ sum(basis[:, :, n]) .* all_coeffs[:, n];
     end
 
-    u_est = 2 .* ((u1_top ./ u1_bot) .+ (im .* u2_top ./ u2_bot));
+    u_est = 2 .* ((im .* u1_top ./ u1_bot) .+ (u2_top ./ u2_bot));
 
     # dont use estimations whose displacement is larger than the filter_half_size
     displacement = real(u_est).^2 + imag(u_est).^2
     displacement_mask = displacement .> filter_half_size^2
-    u_est[displacement_mask] .= NaN + NaN*im;
+    u_est[displacement_mask] .= NaN .+ NaN .* 1im;
 
     return u_est, all_coeffs
 
 end
 
 
+using PyPlot: Figure
+
 function polyfilter_lap(target, source)
+
+    # ********************** #
+    # ****** SETTINGS ****** #
+    # ********************** #
 
     # choose filter basis size. 3 or 6
     filter_num = 3
 
+    # maximum number of times an iteration of one filter size can be repeated
+    max_repeats = 1
+
+    # verbose prints
+    display = true
+
+    # ********************** #
+    # ******** CODE ******** #
+    # ********************** #
+
     # rescale images to have the whole [0, 1] spectrum.
-    target, source = rescale_intensities(target, source)
+    target, source = LAP_julia.helpers.rescale_intensities(target, source)
 
     # pad with zeros if sizes difer.
-    target, source = pad_images(target, source)
+    target, source = LAP_julia.helpers.pad_images(target, source)
 
     image_size = size(target)
 
+    # convert images to floats
+    source = Float32.(source)
+    target = Float32.(target)
+
     # set number of layers in the filter pyramid.
-    level_num = floor(log2(minimum(size(target))/8)+1)
+    level_num = floor(Int64, log2(minimum(size(target))/8)+1)+1
+
+    @assert ((2^(level_num)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
 
     # displacement init.
     u_est = zeros(size(target))
 
-    @assert ((2^(level_num+1)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
+    # filter half sizes array eg. [16, 8, 4, 2, 1]
+    half_size_pyramid::Array{Int64,1} = 2 .^ range(level_num-1, stop=0, length=level_num)
 
+    # at what filter size change the interpolation strategy
+    interpol_change_index = findfirst(x -> x == 2, half_size_pyramid)
+
+    if display
+        num_plots = 4
+        figs = Array{Figure}(undef, level_num, max_repeats*num_plots)
+    end
+
+    source_reg = source
+
+    for iter in 1:level_num
+
+        if display
+            println("###################")
+            println("ITERATION: ", iter)
+            println("filter_half_size: ", half_size_pyramid[iter])
+        end
+
+        filter_half_size = half_size_pyramid[iter]::Int
+        window_size::Array{Int64,1} = 2 .* filter_half_size .* ones(2) .+ 1
+        window_half_size::Array{Int64,1} = (window_size .- 1) ./ 2
+
+        for iter_repeat in 1:max_repeats
+
+            Δ_u, coeffs = single_lap(target, source_reg, filter_num, filter_half_size, window_size)
+
+            # USE INPAINTING TO CORRECT U_EST:
+            # 1) replicate borders
+            middle_vals = Δ_u[window_half_size[1]+1:end-window_half_size[1],
+                              window_half_size[2]+1:end-window_half_size[2]]
+            Δ_u = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
+            # 2) inpaint middle missing values
+            if all(isnan.(real(Δ_u))) # if all are NaNs
+                Δ_u = zeros(image_size)
+            elseif any(isnan.(Δ_u)) # if some are NaNs
+                LAP_julia.inpaint.inpaint_nans!(Δ_u)
+            end
+            # SMOOTH U_EST WITH A GAUSSIAN FILTER:
+            Δ_u = LAP_julia.helpers.clean_using_gaussain(Δ_u, window_half_size)
+
+            # add the Δ_u to my u_est
+            u_est = u_est + Δ_u
+
+            if display
+                figs[iter,1] = showflow(u_est)
+                figs[iter,2] = showflow(Δ_u)
+                figs[iter,3] = imgshow(source_reg)
+            end
+
+            # depending on the size of the filter used, warp the source image closer to target using u_est
+            if iter < interpol_change_index
+                # linear interpolation
+                source_reg = LAP_julia.interpolation.imWarp_replicate(source, real(u_est), imag(u_est))
+            else
+                # more accurate slower interpolation TODO
+                source_reg = LAP_julia.interpolation.imWarp_replicate(source, real(u_est), imag(u_est))
+            end
+
+        end
+
+        if display
+            println("###################")
+        end
+    end
+
+    return u_est, source_reg, figs
 end
 
 # NOTE: can parallelize

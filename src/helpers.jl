@@ -1,3 +1,7 @@
+module helpers
+
+using ImageFiltering: centered, KernelFactors.gaussian, kernelfactors, imfilter
+
 """
     pad_images(image1, image2)
 
@@ -41,28 +45,43 @@ function rescale_intensities(image1, image2)
     return image1, image2
 end
 
-function display_flow(u_est, skip_count)
-    p1 = figure()
-    uv_flow = zeros(size(u_est)..., 2)
-    uv_flow[:, :, 1] = real(u_est)
-    uv_flow[:, :, 2] = imag(u_est)
+"""
+    clean_using_gaussain(u, window_half_size)
 
-    n = skip_count
+function cleans the estimate of the displacement field `u` by smoothing using a Gaussian filter
+"""
+function clean_using_gaussain(u, window_half_size)
 
-    trimmed_real = zeros(size(uv_flow[:,:,1]))
-    trimmed_real[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 1]
-    trimmed_imag = zeros(size(uv_flow[:,:,2]))
-    trimmed_imag[1:n:end, 1:n:end] = uv_flow[1:n:end, 1:n:end, 2]
+    # Sigma value for Gaussian filter:
+    if length(window_half_size) == 1
+        window_half_size = [window_half_size, window_half_size]
+    end
+    σ_1 = 2 * window_half_size[1]
+    σ_2 = 2 * window_half_size[2]
 
-    PyPlot.quiver(trimmed_real, trimmed_imag)
-    gcf()
+    cent_inds_1 = centered(-σ_1:σ_1)
+    cent_inds_1 = centered(-σ_2:σ_2)
+
+    gaus_1 = gaussian(σ_1, 2 * σ_1 + 1)
+    gaus_2 = gaussian(σ_2, 2 * σ_2 + 1)
+
+    kernf = kernelfactors((gaus_1, gaus_2))
+
+    u_out = imfilter(u, kernf, "symmetric")
+    return u_out
+end
+
+function mean(x)
+    sum(x)/length(x)
 end
 
 
-function maxim(a)
-    maximum(x->isnan(x) ? -Inf : x, a)
-end
+# function maxim(a)
+#     maximum(x->isnan(x) ? -Inf : x, a)
+# end
+#
+# function minim(a)
+#     minimum(x->isnan(x) ? +Inf : x, a)
+# end
 
-function minim(a)
-    minimum(x->isnan(x) ? +Inf : x, a)
-end
+end # module

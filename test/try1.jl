@@ -30,7 +30,7 @@ gray_target = Gray.(target_in)
 
 #--- load chessboard image1
 
-tile_size = 5
+tile_size = 4
 board_size = 8 # must be even
 mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
               ones(tile_size, tile_size) zeros(tile_size, tile_size)]
@@ -338,18 +338,146 @@ chess_warp_f = copy(chess_norm_f)
 for k in 2:size(chess_warp_f)[1]
     for l in 2:size(chess_warp_f)[2]
         chess_warp_f[k-1, l-1] = chess_warp_f[k, l]
+        if l == size(chess_warp_f)[2]
+            chess_warp_f[k-1, l] = chess_warp_f[k, l]
+        end
+        if k == size(chess_warp_f)[1]
+            chess_warp_f[k, l-1] = chess_warp_f[k, l]
+        end
     end
 end
 
 filter_half_size = 2
 filter_size = filter_half_size * 2 + 1
 
-u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_size, [filter_size, filter_size])
+u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
 
-u_est[10, 10]
-real(u_est)
-imag(u_est)
+# using ImageFiltering: Pad
+#
+# @views u_est = u_est[]
+# u_est = parent(padarray(u_est, Pad(:replicate, filter_half_size, filter_half_size)))
 
 p1 = figure()
-quiver(real(u_est), imag(u_est))
-gcf()
+PyPlot.quiver(real(u_est), imag(u_est))
+gfc()
+
+#---
+using Statistics: mean
+
+average = mean(filter(!isnan, u_est))
+sqrt(real(average)^2 + imag(average)^2)
+
+#---
+image_size = size(chessboard)
+
+window_size = ones(2) .* filter_size
+window_half_size = Int64.((window_size .- 1) ./ 2)
+
+Δ_u = ones(10,10)
+
+middle_vals = Δ_u[window_half_size[1]+1:end-window_half_size[1],
+                 window_half_size[2]+1:end-window_half_size[2]]
+Δ_u = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
+
+Δ_u[3, 3] = NaN
+
+Δ_u
+
+any(isnan.(Δ_u))
+
+#---
+
+u = ones(10,10) .+ 2im .* ones(10,10)
+u[3:5, 3:5] .= NaN + 1im .* NaN
+
+u
+
+out = LAP_julia.interpolate.interpolate_nans(u)
+
+
+mask = .!isnan.(u)
+
+u0 = u
+u0[.!mask] .= 0
+
+div_coef = similar(u, Int16)
+
+#--- TEST INPAINT
+
+u = ones(10,10) .+ 2im .* ones(10,10);
+u[3:8, 3:8] .= NaN .+ NaN .* 1im;
+
+#mask = .!isnan.(real(u))
+
+out = LAP_julia.inpaint.inpaint_nans!(u)
+
+#---
+
+u = ones(10,10) .+ 2im .* ones(10,10);
+u[3:8, 3:8] .= NaN .+ NaN .* 1im;
+
+mask = .!isnan.(real(u))
+
+div_coef = ones(size(u))
+using ImageFiltering: kernelfactors, imfilter!, Pad, centered
+
+using ImageFiltering: kernelfactors, imfilter, Pad, centered
+mask = ones(10, 10)
+mask[3:8, 3:8] .= 0
+
+ker = centered([0.5, 2, 0.5])
+kernf = kernelfactors((ker, ker));
+
+out = imfilter(mask, kernf, Pad(:symmetric))
+
+#--- Test Makie
+
+using Makie
+using TestImages
+
+img = chessboard
+
+scene = Scene()
+
+img1 = reverse(img, dims=1)
+img1 = transpose(img1)
+
+scene = image(img, show_axis = false, interpolate = false)
+
+scene = heatmap(img, colormap = :grayscale)
+
+display(scene)
+
+
+#--- test PyPlot
+
+
+tile_size = 4
+board_size = 8 # must be even
+mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
+              ones(tile_size, tile_size) zeros(tile_size, tile_size)]
+
+chessboard = repeat(mini_board, outer=(convert(Integer,(board_size/2)), convert(Integer,(board_size/2))))
+chessboard = repeat(mini_board, outer=(2, 2))
+
+img  = chessboard
+
+using Plots
+
+plotly()
+
+Plots.heatmap(img; hover=img)
+gui()
+
+
+###
+using PlotlyJS
+
+PlotlyJS.plot(heatmap(z = img))
+
+
+using Plots
+plotly()
+data = 1:5
+plt = plot(data; hover=data )
+display(plt)
