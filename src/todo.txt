@@ -1,5 +1,6 @@
 TODO:
 
+- napsat zakladni how to run guide na vyzkouseni.
 
 - Start writing
   - napsat o single_lap

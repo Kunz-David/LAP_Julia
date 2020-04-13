@@ -12,7 +12,7 @@ gen_rand_flow generates random flow using a uniform distribution
     - `tile_size`       -> size random element of start matrix (the larger the slower the flow)
     - `filter_amp`      -> size of the gaussian filter which is used to smooth the random start matrix
 # Output:
-    - `uv_flow`         -> generated random flow
+    - `rand_flow`         -> generated random flow
 """
 function gen_rand_flow(flow_size, max_magnitude, tile_size=Nothing, filter_amp=Nothing)
 
@@ -24,7 +24,7 @@ function gen_rand_flow(flow_size, max_magnitude, tile_size=Nothing, filter_amp=N
         filter_amp = ceil(Int64, tile_size/2)
         if isodd(filter_amp)
             filter_amp += 1
-    end
+        end
     end
 
     tile_count = ceil.(Int64, flow_size ./ tile_size)

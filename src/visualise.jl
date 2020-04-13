@@ -4,6 +4,7 @@ using PyPlot: quiver, gcf, figure
 using Printf
 
 function imgshow(img)
+    img = Float64.(img)
     fig = PyPlot.figure(dpi = 300, figsize = (5, 5));
     PyPlot.imshow(img, cmap = :gray);
     ax = gca();

@@ -34,6 +34,8 @@ imgw = LAP_julia.interpolation.imWarp(img, real(flow), imag(flow));
 # show imgw
 imgshow(Float32.(imgw))
 
+imgshow(img)
+
 ## using chessboard image
 
 tile_size = 50
