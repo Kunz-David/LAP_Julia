@@ -20,7 +20,7 @@ using .interpolation
 # used public modules:
 using ImageFiltering: imfilter!, kernelfactors, centered
 
-export imshow, showflow, gen_rand_flow, img_showflow, imgshow, mean
+export showflow, gen_rand_flow, img_showflow, imgshow, mean
 export single_lap, polyfilter_lap
 
 greet() = println("Hello             World!")

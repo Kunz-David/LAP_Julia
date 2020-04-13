@@ -2,6 +2,13 @@
 
 Local all-pass filtering registration method implemented in Julia from [this paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf).
 
+## How to get use this module
+```Julia
+
+```
+
+----
+
 ## Algorithm functions
 1) **`u_est`, `source_reg`, `figs` = `polyfilter_lap(target, source)`**
     - Implements the basic concept of `Algorithm 2` from the [paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf) without some features.
