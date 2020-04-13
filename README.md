@@ -64,9 +64,9 @@ Local all-pass filtering registration method implemented in Julia from [this pap
 -------
 ## Basic usage example
 
-1) Make example images
+1) **Make example images**
 
-    **chessboard**
+    chessboard
     ```Julia
     tile_size = 50
     board_size = 4 # must be even
@@ -77,7 +77,7 @@ Local all-pass filtering registration method implemented in Julia from [this pap
     img = chessboard
     ```
 
-    **mandrill**
+    mandrill
     ```Julia
     img = testimage("mandril_gray")
     imgr = reverse(img, dims=1)
@@ -85,30 +85,30 @@ Local all-pass filtering registration method implemented in Julia from [this pap
     img = imgr
     ```
 
-2) Generate a random flow
+2) **Generate a random flow**
 
-    **smoothly varying**
+    smoothly varying
     ```Julia
     flow = gen_rand_flow(size(img), 30);
     showflow(flow)
     ```
 
-    **uniform pixel shift**
+    uniform pixel shift
     ```Julia
     flow = gen_rand_flow(size(img), 30000);
     showflow(flow)
     ```
 
-3) Warp the input image
+3) **Warp the input image**
 
     ```Julia
     imgw = LAP_julia.interpolation.imWarp_replicate(img, real(flow), imag(flow));
     imgshow(imgw)
     ```
 
-4) Test algorithm functions
+4) **Test algorithm functions**
 
-    **single_lap**
+    single_lap
     ```Julia
     u_est, coeffs = single_lap(img, imgw, 3, 32, [65, 65]);
     LAP_julia.inpaint.inpaint_nans!(u_est);
@@ -116,26 +116,26 @@ Local all-pass filtering registration method implemented in Julia from [this pap
     dewarped_img = LAP_julia.interpolation.imWarp_replicate(imgw, real(u_sin_est), imag(u_est))
     ```
 
-    **polyfilter_lap**
+    polyfilter_lap
     ```Julia
     u_est, source_reg, figs = LAP_julia.lap.polyfilter_lap(img, imgw);
     ```
 
-5) Show results
+5) **Show results**
 
-    **single_lap**
+    single_lap
     ```Julia
     imgshow(dewarped_img)
     showflow(u_est)
     ```
 
-    **polyfilter_lap**
+    polyfilter_lap
     ```Julia
     imgshow(source_reg)
     showflow(u_est)
     ```
 
-    **estimated flow comparison**
+    estimated flow comparison
     ```Julia
     showflow(flow) # original
     showflow(u_est .* (-1)) # estimated
