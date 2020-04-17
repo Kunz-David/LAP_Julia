@@ -3,8 +3,10 @@
 Local all-pass filtering registration method implemented in Julia from [this paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf).
 
 ## How to get use this module
-```Julia
 
+Open up a Julia terminal and type:
+```Julia
+using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_Julia"))
 ```
 
 ----
