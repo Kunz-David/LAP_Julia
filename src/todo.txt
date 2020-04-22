@@ -22,3 +22,11 @@ How to debug:
 
 How to make pyplot work:
 - after start: using PyPlot, then using LAP_julia 3x ---> include("src/go.jl")
+
+
+
+# printing a type subtree:
+-------------------
+using AbstractTrees
+AbstractTrees.children(x::Type) = subtypes(x)
+print_tree(Number)

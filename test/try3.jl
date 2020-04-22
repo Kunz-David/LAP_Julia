@@ -38,18 +38,15 @@ imgshow(img)
 
 ## using chessboard image
 
-tile_size = 50
+tile_size = 5
 board_size = 4 # must be even
 mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
               ones(tile_size, tile_size) zeros(tile_size, tile_size)]
-
 chessboard = repeat(mini_board, outer=(convert(Integer,(board_size/2)), convert(Integer,(board_size/2))))
-#chessboard = repeat(mini_board, outer=(2, 2))
 img = chessboard
 
 # genrate flow
 flow = gen_rand_flow(size(img), 20, 1000);
-flow[1,1]
 
 # generate warpped image
 imgw = LAP_julia.interpolation.imWarp_replicate(img, real(flow), imag(flow))

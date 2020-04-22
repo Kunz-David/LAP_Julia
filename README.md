@@ -5,9 +5,22 @@ Local all-pass filtering registration method implemented in Julia from [this pap
 
 ## How to get use this module
 
-Open up a Julia terminal and type:
+For the latest version of this module open up a Julia terminal and type:
 ```Julia
 using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_Julia"))
+using LAP_julia
+```
+
+For the latest "documented" and working version of this module open up a Julia terminal and type:
+```Julia
+using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_Julia", rev="8312abfeb6fc4f63b512d6f3fe41096c5b667b02"))
+using LAP_julia
+```
+
+The plotting functions use Julia's PyPlot module and Matplotlib has to be installed in your default Python. You can either install Matplotlib in your Python or let Julia use the Python it installed and manages.
+For that set `ENV[PYTHON]` to the Python installed by Julia. So something like this, will do the trick:
+```Julia
+ENV["PYTHON"] = "..ENTER USER.../.julia/conda/3/bin"
 ```
 
 ----

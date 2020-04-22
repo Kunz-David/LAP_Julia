@@ -1,5 +1,7 @@
 module visualise
 
+export showflow, gen_rand_flow, img_showflow, imgshow
+
 using PyPlot: quiver, gcf, figure
 using Printf
 
