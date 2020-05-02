@@ -6,9 +6,9 @@ makedocs(
     sitename = "Local All Pass registration",
     pages = ["index.md",
              "Public API" => "lib/public.md",
-             "Internals" => "lib/private.md"],
+             "Internals" => "lib/private.md"]
     # see here https://juliadocs.github.io/Documenter.jl/stable/man/guide/
-    format = Documenter.HTML(prettyurls = false)
+    # format = Documenter.HTML(prettyurls = false)
     )
 
 
