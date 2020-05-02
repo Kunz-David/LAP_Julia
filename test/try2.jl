@@ -1,4 +1,4 @@
-### TRY numero 2
+### TRY numero 2
 
 tile_size = 4
 board_size = 8 # must be even
@@ -12,7 +12,7 @@ img = chessboard
 
 
 
-### test clean for u
+### test clean for u
 
 
 chess_norm = chessboard
@@ -76,7 +76,7 @@ function imWarp(img, dx, dy)
 end
 
 function is_in(x, (low, high))
-    return x >= low && x <= high
+    return x >= low && x <= high
 end
 
 is_in(1.0, (1, 512))

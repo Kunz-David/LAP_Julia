@@ -194,7 +194,7 @@ z1 = [real(point) for point in z]
 z2 = [imag(point) for point in z]
 
 
-### compare results
+### compare results
 
 # prepare data:
 flow = gen_rand_flow(size(img), 30, 60)

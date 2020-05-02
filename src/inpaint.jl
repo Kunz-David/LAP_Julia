@@ -41,7 +41,7 @@ function inpaint_nans!(flow::Flow)
         # identify the newly estimated
         newly_inpainted = ((div_coef .!= 0) .* (mask .== 0))
 
-        # set newly inpainted
+        # set newly inpainted
         @views flow[newly_inpainted] = estim_flow[newly_inpainted] ./ div_coef[newly_inpainted]
 
         # update mask

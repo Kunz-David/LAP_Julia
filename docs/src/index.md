@@ -5,7 +5,7 @@
 some text Here
 
 ```julia
-# some julia code
+# some julia code
 d = 12
 ```
 

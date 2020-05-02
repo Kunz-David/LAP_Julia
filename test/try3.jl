@@ -13,7 +13,7 @@ img = mgrid
 # genrate flow
 flow = gen_rand_flow(size(img), 50);
 
-# generate warpped image
+# generate warpped image
 imgw = LAP_julia.interpolation.imWarp(img, real(flow), imag(flow))
 
 
@@ -28,7 +28,7 @@ img = imgr
 flow = gen_rand_flow(size(img), 30);
 showflow(flow)
 
-# generate warpped image
+# generate warpped image
 imgw = LAP_julia.interpolation.imWarp(img, real(flow), imag(flow));
 
 # show imgw
@@ -50,7 +50,7 @@ img = gen_chess()
 # genrate flow
 flow = gen_rand_flow(size(img), 20, 1000);
 
-# generate warpped image
+# generate warpped image
 imgw = LAP_julia.interpolation.warp_img(img, real(flow), imag(flow))
 
 # show imgw
@@ -82,7 +82,7 @@ maximum(abs.(imag(u_est)))
 showflow(u_est)
 showflow(u_est .* (-1) .- flow)
 
-# rewarp check
+# rewarp check
 dewarp = LAP_julia.interpolation.imWarp(imgw, real(u_est), imag(u_est))
 imgshow(Float32.(dewarp))
 imgshow(Float32.(img))
@@ -127,7 +127,7 @@ gcf()
 #
 # transpose(A[:]) * k[:]
 #
-# sum(transpose(A) * (-1:1))
+# sum(transpose(A) * (-1:1))
 #
 # # l0
 #

@@ -280,7 +280,7 @@ See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_
 function polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
 
     # ********************** #
-    # ****** SETTINGS ****** #
+    # ****** SETTINGS ****** #
     # ********************** #
 
     # choose filter basis size. 3 or 6
@@ -360,7 +360,7 @@ function polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max
             # SMOOTH U_EST WITH A GAUSSIAN FILTER:
             Δ_u = LAP_julia.clean_using_gaussain(Δ_u, window_half_size)
 
-            # add the Δ_u to my u_est
+            # add the Δ_u to my u_est
             u_est = u_est + Δ_u
 
             if display
@@ -408,7 +408,7 @@ end
 
 # NOTE: here maybe an average could be better so the size of the window
 # doest effect the number range of the results
-# also might improve the speed if the pixels are saved into a tmp var
+# also might improve the speed if the pixels are saved into a tmp var
 """
     function window_sum!(filter_result, pixels, image_size, window_size)
 

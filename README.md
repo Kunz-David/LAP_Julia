@@ -55,13 +55,13 @@ ENV["PYTHON"] = "..ENTER USER.../.julia/conda/3/bin"
 1) **`imgshow(img)`**
     - Plots the image `img` putting the origin in the bottom left corner.
     - _Note:_ Use `img = reverse(img, dims=1)` on images from the `TestImages` module.
-2) **`showflow(u_est, skip_count=nothing; fig=nothing, mag=1, legend=true)`**
+2) **`showflow(u_est, skip_count=nothing; fig=nothing, mag=1, legend=true)`**
     - Plots the complex flow `u_est`.
     - ### Input:
         - `u_est` is the complex flow.
         - _Optional:_ `skip_count` is the number of vectors to skip for the displaying of larger flows to be meaningful. Will be set to a magic constant depending on the size of `u_est`.
         - _Optional:_ `mag` is the magnification of the vectors.
-3) **`imgshowflow(imgw, flow; skip_count=nothing, mag=1)`**
+3) **`imgshowflow(imgw, flow; skip_count=nothing, mag=1)`**
     - A combination of `imgshow` and `showflow`.
 
 ## Other functions
@@ -161,7 +161,7 @@ ENV["PYTHON"] = "..ENTER USER.../.julia/conda/3/bin"
     estimated flow comparison
     ```Julia
     showflow(flow) # original
-    showflow(u_est .* (-1)) # estimated
+    showflow(u_est .* (-1)) # estimated
 
     # difference
     showflow(u_est .* (-1) .- flow)

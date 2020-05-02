@@ -19,10 +19,13 @@ jobs:
         run: julia --project=docs/ --color=yes -e 'ENV["DOCUMENTER_DEBUG"] = "true"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       # - name: find julia conda python
       #   run: cd ~ && pwd && echo '******' && ls -la && cd .julia/conda/3/ && echo '******' && pwd && ls -la && echo '*********' && pwd && cd bin
-      - name: Set default python
-        run: julia --project=docs/ --color=yes -e 'using Pkg; Pkg.add("PyCall"); ENV["PYTHON"]; ENV["PYTHON"]="~/.julia/conda/3/bin"; Pkg.build("PyCall"); ENV'
+      # - name: Set default python
+      #   run: julia --project=docs/ --color=yes -e 'using Pkg; Pkg.add("PyCall"); ENV["PYTHON"]; ENV["PYTHON"]="~/.julia/conda/3/bin"; Pkg.build("PyCall"); ENV'
       - name: Build and deploy
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
         run: julia --color=yes --project=docs/ docs/make.jl  # maybe add 'ENV["DOCUMENTER_DEBUG"] = "true"
+
+notifications:
+  email: false

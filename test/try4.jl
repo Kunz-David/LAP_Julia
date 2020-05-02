@@ -43,7 +43,7 @@ coverage = 1;
 
 (pi * spacing^2 * point_count)/length(img)
 
-r = sqrt(( * ))
+r = sqrt(( * ))
 
 points, mag, mag_points = LAP_julia.gradient_points.find_keypoints_from_gradients(img, sigma = 5, number = point_count, spacing = spacing)
 
@@ -90,7 +90,7 @@ flow = gen_rand_flow(size(img), 20, 1000);
 
 showflow(flow)
 
-# generate warpped image
+# generate warpped image
 imgw = LAP_julia.interpolation.warp_img(img, real(flow), imag(flow));
 
 # params:

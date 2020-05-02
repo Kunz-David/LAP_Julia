@@ -54,7 +54,7 @@ ax = gca();
 ax.set_ylim(0, size(img)[1]);
 gcf()
 
-# difference:
+# difference:
 img_dif = img - img_remade;
 img_dif[40,101]
 
@@ -89,7 +89,7 @@ imgshow(imgw)
 
 save("img_inp.png", reverse(img_inp, dims=1))
 
-# difference:
+# difference:
 img_dif2 = img - img_inp;
 
 fig = PyPlot.figure(dpi = 300, figsize = (5, 5));
