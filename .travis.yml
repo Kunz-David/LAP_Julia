@@ -18,7 +18,7 @@ jobs:
       os: osx
       script:
         - cd ~ && pwd && echo '******' && ls -la && cd .julia/conda/3/ && echo '******' && pwd && ls -la && echo '*********' && pwd && cd bin
-        - julia --project=docs/ --color=yes -e 'ENV["PYTHON"]="~/.julia/conda/3/bin"; using Pkg; Pkg.build("PyCall"); ENV'
+        - julia --project=docs/ --color=yes -e 'ENV["PYTHON"]; ENV["PYTHON"]="~/.julia/conda/3/bin"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall"); ENV'
         - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd()));
                                     Pkg.instantiate()'
         - julia --project=docs/ docs/make.jl
