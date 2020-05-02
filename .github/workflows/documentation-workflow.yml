@@ -16,11 +16,11 @@ jobs:
         with:
           version: 1.3
       - name: Install dependencies
-        run: julia --project=docs/ -e 'ENV["DOCUMENTER_DEBUG"] = "true"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+        run: julia --project=docs/ --color=yes -e 'ENV["DOCUMENTER_DEBUG"] = "true"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: find julia conda python
-        run: pwd && echo '******' && cd ~ && ls -la && echo '******' && cd .julia && ls && echo '******' && cd conda && ls && echo '******' && pwd
-      # - name: Build and deploy
-      #   run: julia --project=docs/ -e ''
+        run: cd ~/.julia/conda/3/bin && ls && echo '*********' && pwd
+      - name: Set default python
+        run: julia --project=docs/ --color=yes -e 'ENV["PYTHON"]="~/.julia/conda/3/bin"; using Pkg; Pkg.build("PyCall"); ENV'
       - name: Build and deploy
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
