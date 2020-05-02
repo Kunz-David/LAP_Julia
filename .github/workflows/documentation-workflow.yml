@@ -17,8 +17,12 @@ jobs:
           version: 1.3
       - name: Install dependencies
         run: julia --project=docs/ -e 'ENV["DOCUMENTER_DEBUG"] = "true"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - name: find julia conda python
+        run: pwd && echo '******' && ls && echo '******' && cd .julia && ls && echo '******' && cd conda && ls && echo '******'
+      # - name: Build and deploy
+      #   run: julia --project=docs/ -e ''
       - name: Build and deploy
         env:
           #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }} # For authentication with SSH deploy key
-        run: julia --project=docs/ -e make.jl  # maybe add 'ENV["DOCUMENTER_DEBUG"] = "true"
+        run: julia --color=yes --project=docs/ docs/make.jl  # maybe add 'ENV["DOCUMENTER_DEBUG"] = "true"
