@@ -18,7 +18,7 @@ jobs:
       - name: Install dependencies
         run: julia --project=docs/ -e 'ENV["DOCUMENTER_DEBUG"] = "true"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
       - name: find julia conda python
-        run: pwd && echo '******' && ls && echo '******' && cd .julia && ls && echo '******' && cd conda && ls && echo '******'
+        run: pwd && echo '******' && cd ~ && ls -la && echo '******' && cd .julia && ls && echo '******' && cd conda && ls && echo '******' && pwd
       # - name: Build and deploy
       #   run: julia --project=docs/ -e ''
       - name: Build and deploy
