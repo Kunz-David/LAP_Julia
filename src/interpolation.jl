@@ -1,6 +1,6 @@
 module interpolation
 
-using Interpolations, ColorVectorSpace, ImageFiltering, Images
+using Interpolations, ColorVectorSpace, ImageFiltering, Images, LAP_julia
 
 """
     function warp_img(img, dx, dy; border_strat::Symbol=:replicate)
