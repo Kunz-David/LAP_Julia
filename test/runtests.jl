@@ -37,8 +37,8 @@ using CSV
     @testset "pad_images $k, $l, $m, $n" for k = 1:3, l = 1:3, m = 1:3, n = 1:3
         im1 = ones(k, l)
         im2 = ones(m, n)
-        @test size(LAP_julia.helpers.pad_images(im1, im2)[1]) <= (k+m-1, l+n-1)
-        @test size(LAP_julia.helpers.pad_images(im1, im2)[1]) == ((k<m) ? m : k, (l<n) ? n : l)
+        @test size(LAP_julia.pad_images(im1, im2)[1]) <= (k+m-1, l+n-1)
+        @test size(LAP_julia.pad_images(im1, im2)[1]) == ((k<m) ? m : k, (l<n) ? n : l)
     end
 end
 
