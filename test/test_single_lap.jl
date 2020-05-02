@@ -16,18 +16,18 @@ real_coef = 5;
 imag_coef = -2;
 flow = real_coef .* ones(size(img)) .+ imag_coef .* im .* ones(size(img))
 
-img_showflow(img, flow)
+imgshowflow(img, flow)
 
 imgw = LAP_julia.interpolation.imWarp_replicate(img, real(flow), imag(flow))
 imgshow(imgw)
 
-img_showflow(imgw, zeros(size(imgw)))
-img_showflow(img, zeros(size(imgw)))
+imgshowflow(imgw, zeros(size(imgw)))
+imgshowflow(img, zeros(size(imgw)))
 save("imgw.png", reverse(imgw, dims=1))
 save("img.png", reverse(img, dims=1))
 
 
-img_showflow(imgw, flow)
+imgshowflow(imgw, flow)
 
 u_est, coeffs = LAP_julia.lap.single_lap(img, imgw, 3, 7, [15, 15])
 

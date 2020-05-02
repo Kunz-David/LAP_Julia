@@ -1,0 +1,87 @@
+TODO:
+
+- napsat zakladni how to run guide na vyzkouseni.
+
+- Start writing
+  - napsat o single_lap
+
+- test how to run imfilter, what alg to use?
+
+
+- make a smooth displacement field funciton in julia
+  - can use Augmentor
+
+- add base 6 to single lap
+
+- test how the size of the filter affects the quality of a single_lap run
+
+
+How to debug:
+- Juno.@enter
+
+How to open jupyter
+using IJulia
+notebook(dir=pwd(), detached=true)
+
+in rbf solveForWeights line 249 lu can error: LinearAlgebra.SingularException(144)
+```
+LinearAlgebra.SingularException(144)
+
+Stacktrace:
+ [1] checknonsingular at /Users/julia/buildbot/worker/package_macos64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/factorization.jl:19 [inlined]
+ [2] #lu!#131(::Bool, ::typeof(LinearAlgebra.lu!), ::Array{Float64,2}, ::Val{true}) at /Users/julia/buildbot/worker/package_macos64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/lu.jl:85
+ [3] #lu! at ./none:0 [inlined]
+ [4] #lu#135 at /Users/julia/buildbot/worker/package_macos64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/lu.jl:273 [inlined]
+ [5] lu at /Users/julia/buildbot/worker/package_macos64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/lu.jl:272 [inlined] (repeats 2 times)
+ [6] \(::Array{Float64,2}, ::Array{Complex{Float64},1}) at /Users/julia/buildbot/worker/package_macos64/build/usr/share/julia/stdlib/v1.3/LinearAlgebra/src/generic.jl:1050
+ [7] solveForWeights at /Users/MrTrololord/.julia/packages/ScatteredInterpolation/05YPn/src/rbf.jl:249 [inlined]
+ [8] #interpolate#1(::Distances.Euclidean, ::Bool, ::Bool, ::typeof(interpolate), ::Polyharmonic{Int64}, ::LinearAlgebra.Adjoint{Int64,Array{Int64,2}}, ::Array{Complex{Float64},1}) at /Users/MrTrololord/.julia/packages/ScatteredInterpolation/05YPn/src/rbf.jl:201
+ [9] interpolate at /Users/MrTrololord/.julia/packages/ScatteredInterpolation/05YPn/src/rbf.jl:192 [inlined]
+ [10] #test_scatter#7(::Polyharmonic{Int64}, ::typeof(test_scatter), ::Tuple{Int64,Int64}, ::LinearAlgebra.Adjoint{Int64,Array{Int64,2}}, ::Array{Complex{Float64},1}) at ./In[3]:11
+ [11] #test_scatter at ./none:0 [inlined]
+ [12] ##core#4137(::Type{Polyharmonic}, ::Tuple{Int64,Int64}, ::LinearAlgebra.Adjoint{Int64,Array{Int64,2}}, ::Array{Complex{Float64},1}) at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:371
+ [13] ##sample#4138(::BenchmarkTools.Parameters) at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:377
+ [14] #_run#640(::Bool, ::String, ::Base.Iterators.Pairs{Symbol,Integer,NTuple{4,Symbol},NamedTuple{(:samples, :evals, :gctrial, :gcsample),Tuple{Int64,Int64,Bool,Bool}}}, ::typeof(BenchmarkTools._run), ::BenchmarkTools.Benchmark{Symbol("##benchmark#4136")}, ::BenchmarkTools.Parameters) at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:405
+ [15] (::Base.var"#inner#2"{Base.Iterators.Pairs{Symbol,Integer,NTuple{5,Symbol},NamedTuple{(:verbose, :samples, :evals, :gctrial, :gcsample),Tuple{Bool,Int64,Int64,Bool,Bool}}},typeof(BenchmarkTools._run),Tuple{BenchmarkTools.Benchmark{Symbol("##benchmark#4136")},BenchmarkTools.Parameters}})() at ./none:0
+ [16] #invokelatest#1 at ./essentials.jl:713 [inlined]
+ [17] #invokelatest at ./none:0 [inlined]
+ [18] #run_result#37 at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:32 [inlined]
+ [19] #run_result at ./none:0 [inlined]
+ [20] #run#40(::Nothing, ::Float64, ::Float64, ::Base.Iterators.Pairs{Symbol,Integer,NTuple{5,Symbol},NamedTuple{(:verbose, :samples, :evals, :gctrial, :gcsample),Tuple{Bool,Int64,Int64,Bool,Bool}}}, ::typeof(run), ::BenchmarkTools.Benchmark{Symbol("##benchmark#4136")}, ::BenchmarkTools.Parameters) at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:94
+ [21] #run at ./none:0 [inlined] (repeats 2 times)
+ [22] #warmup#45 at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:141 [inlined]
+ [23] warmup(::BenchmarkTools.Benchmark{Symbol("##benchmark#4136")}) at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:141
+ [24] top-level scope at /Users/MrTrololord/.julia/packages/BenchmarkTools/eCEpo/src/execution.jl:287
+ [25] top-level scope at In[60]:46
+ ```
+
+
+How to make pyplot work:
+- after start: using PyPlot, then using LAP_julia 3x ---> include("src/go.jl")
+
+- find out how to make better doctstrings with vars not like this `x`. it is done by a double backtick ``x``
+from ScatteredInterpolation
+
+If I have time:
+- pridat pravdepobnostni vyber bodu.
+Ad. 1) Napadlo me zkusit udelat vyber bodu jeste trochu jinak:
+1) spocital bych velikost gradientu pixelu
+2) misto toho abych pak bral postupne x nejvetsich a kolem vybranych iterativne delal kruh ze ktereho uz dalsi body nechci, bych bodum pridelil pravdepodobnost vyberu podle velikosti gradientu a
+
+
+# printing a type subtree:
+-------------------
+using AbstractTrees
+AbstractTrees.children(x::Type) = subtypes(x)
+print_tree(Number)
+
+Warn if type is not known
+@code_warntype
+
+### function type syntax:
+function g2(x::Type, y::mat) where {Type <:Real, mat <: Matrix{<:Complex{<:Real}}}
+    x .+ y
+end
+
+
+supertype()

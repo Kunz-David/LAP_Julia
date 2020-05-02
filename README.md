@@ -61,7 +61,7 @@ ENV["PYTHON"] = "..ENTER USER.../.julia/conda/3/bin"
         - `u_est` is the complex flow.
         - _Optional:_ `skip_count` is the number of vectors to skip for the displaying of larger flows to be meaningful. Will be set to a magic constant depending on the size of `u_est`.
         - _Optional:_ `mag` is the magnification of the vectors.
-3) **`img_showflow(imgw, flow; skip_count=nothing, mag=1)`**
+3) **`imgshowflow(imgw, flow; skip_count=nothing, mag=1)`**
     - A combination of `imgshow` and `showflow`.
 
 ## Other functions

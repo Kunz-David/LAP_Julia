@@ -64,6 +64,6 @@ u = gen_rand_flow((51, 123), 10)
 showflow(u)
 
 1
-LAP_julia.visualise.img_showflow(imgw, flow)
+LAP_julia.visualise.imgshowflow(imgw, flow)
 
-LAP_julia.visualise.warp_img_showflow(img, flow .* (-1))
+LAP_julia.visualise.warp_imgshowflow(img, flow .* (-1))

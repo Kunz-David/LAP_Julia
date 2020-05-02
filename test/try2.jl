@@ -140,9 +140,11 @@ tfine = 0:.01:1
 xs, ys = [itp(t,1) for t in tfine], [itp(t,2) for t in tfine];
 
 
+using PyPlot
+
 figure()
 scatter(x, y, label="knots")
-plot(xs, ys, label="spline")
+PyPlot.plot(xs, ys, label="spline")
 gcf()
 
 ###
@@ -163,7 +165,7 @@ xs = [sitp(t) for t in tfine]
 
 figure()
 scatter(t, x, label="knots")
-plot(tfine, xs, label="spline")
+PyPlot.plot(tfine, xs, label="spline")
 gcf()
 
 ### get rid of unwanted image replication on the right and bottom of images in the interpolation
@@ -192,3 +194,5 @@ imgw
 
 
 save("img.png", imgw)
+
+###

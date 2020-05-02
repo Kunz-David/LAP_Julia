@@ -2,4 +2,7 @@
 /Manifest.toml
 /dev/
 /try/
+/docs/build/
+setup.jl
 junk.jl
+/test/benchmarks/dataframe_df.jld2

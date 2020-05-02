@@ -1,9 +1,11 @@
 module lap
-export single_lap, polyfilter_lap
+
+export polyfilter_lap, single_lap
 
 using LAP_julia
 using ImageFiltering: Fill, KernelFactors.gaussian, centered, kernelfactors, imfilter!, padarray, Pad
 using LinearAlgebra: qr
+using PyPlot: Figure
 
 function test()
     print("testing revise")
@@ -30,20 +32,20 @@ end
 #
 
 """
-    function single_lap(image_1, image_2, filter_num, filter_half_size, window_size)
+    single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, filter_num::Integer=3, window_size)
 
-# input:
-- `image_1` ... grayscale image 1
-- `image_2` ... grayscale image 2
-- `filter_num` ... number of basis filters used (so far only =3 implemented)
-- `filter_half_size` ... (filter_size = 2*filter_half_size + 1) filter size: `filter_size` \times `filter_size`
-- `window_size` ... size of local window (list of 2 ints) usually same as filter_size
+Return an estimate of a smoothly varying flow of size of `image_1` which is the displacement that transforms `image_2` closer to `image_1`.
 
-# output:
-- `u_est` ... a complex matrix of size of `image_1` which is the displacment of `image_1` and `image_2`
-- `all_coeffs` ... cofficients of the basis filters for each pixel
+# Arguments:
+- `image_1::Image`: grayscale image 1.
+- `image_2::Image`: grayscale image 2.
+- `filter_num::Integer=3`: the number of basis filters used (so far only =3 implemented).
+- `filter_half_size`: the half size of the base of the gaussian filters used.
+- `window_size`: the size of the local window (list of 2 ints) usually same as filter_size.
+
+See also: [`polyfilter_lap`](@ref), [`showflow`](@ref), [`warp_imgshowflow`](@ref), [`imgshowflow`](@ref)
 """
-function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, window_size)
+function single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, window_size, filter_num::Integer=3)
 
     pixel_count = length(image_1)
     image_size = size(image_1)
@@ -56,15 +58,6 @@ function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, wi
     gaus = gaussian(sigma, filter_size)
     gaus_der = gaus .* centered_inds .* (-1)/sigma^2
     gaus_der_flip = reverse(gaus_der, dims=1)
-
-    # OLD way:
-    # gaussian(x,s) = exp.(-x.*x/2/s^2)
-    # K0=ceil([K,L]); --> this is filter half size
-    # Gx = gaus(-filter_half_size:filter_half_size, sigma)
-    # Gdx = (-filter_half_size:filter_half_size) .* Gx
-    # Gx = Gx ./ sum(Gx)
-    # Gdx = Gdx ./ sum((-filter_half_size:filter_half_size) .* Gdx)
-    # Gdix = reverse(Gdx, dims=1)
 
     # prepare 2D filter basis for later use:
     basis = zeros(filter_size, filter_size, filter_num)
@@ -150,8 +143,7 @@ function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, wi
     displacement_mask = displacement .> filter_half_size^2
     u_est[displacement_mask] .= NaN .+ NaN .* 1im;
 
-    return u_est, all_coeffs
-
+    return u_est
 end
 
 
@@ -259,9 +251,33 @@ function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, wi
 end
 
 
-using PyPlot: Figure
+"""
+    polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
 
-function polyfilter_lap(target, source)
+Find a transformation flow (complex displacment field), that transforms image `source` to image `target`.
+
+# Arguments
+- `target::Image`: the image we want `source` to look like.
+- `source::Image`: warped image we want to transform into `target`.
+- `filter_num::Integer=3`: the number of basis filters used in `single_lap` calls (so far only =3 implemented).
+- `max_repeats::Integer=1`: the maximum number of times an iteration of one filter size can be repeated.
+- `display::Bool=true`: use verbose prints and return an array of figures.
+
+# Outputs
+- `flow::Flow`: is the complex vector field that transforms `source` closer to `target`.
+- `source_reg::Image`: is the image `source` transformed by `flow`.
+- [`figs::Matrix{Figure}`: is a 2D array of `PyPlot` Figures which shows the work of the algorithm at each iteration.
+For each iteration there are 3 Figures in this order: 1) current `u_est`, 2) newest addition to `u_est` `Δ_u`, 3) current `source_reg`.]
+
+# Describtion
+Implements the basic concept of `Algorithm 2` from the [paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf) without some features.
+It uses `single_lap` iteratively; in each iteration using the transformation estimated by `single_lap` to warp the `source` image closer to
+the `target` image and then using this warped closer image as the source image in the next iteration, while using progressively smaller
+`filter_half_sizes` to estimate even small and faster varying displacements.
+
+See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_imgshowflow`](@ref), [`Flow`](@ref)
+"""
+function polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
 
     # ********************** #
     # ****** SETTINGS ****** #
@@ -280,18 +296,18 @@ function polyfilter_lap(target, source)
     # ******** CODE ******** #
     # ********************** #
 
-    # rescale images to have the whole [0, 1] spectrum.
-    target, source = LAP_julia.helpers.rescale_intensities(target, source)
-    #NOTE: a histogram match might be a good idea (https://juliaimages.org/stable/function_reference/#Images.histmatch)
-
-    # pad with zeros if sizes difer.
-    target, source = LAP_julia.helpers.pad_images(target, source)
-
-    image_size = size(target)
-
     # convert images to floats
     source = Float32.(source)
     target = Float32.(target)
+
+    # rescale images to have the whole [0, 1] spectrum.
+    target, source = LAP_julia.rescale_intensities(target, source)
+    #NOTE: a histogram match might be a good idea (https://juliaimages.org/stable/function_reference/#Images.histmatch)
+
+    # pad with zeros if sizes difer.
+    target, source = LAP_julia.pad_images(target, source)
+
+    image_size = size(target)
 
     # set number of layers in the filter pyramid.
     level_num = floor(Int64, log2(minimum(size(target))/8)+1)+1
@@ -323,12 +339,12 @@ function polyfilter_lap(target, source)
         end
 
         filter_half_size = half_size_pyramid[iter]::Int
-        window_size::Array{Int64,1} = 2 .* filter_half_size .* ones(2) .+ 1
-        window_half_size::Array{Int64,1} = (window_size .- 1) ./ 2
+        window_size::Tuple{Int64, Int64} = 2 .* filter_half_size .* (1, 1) .+ 1
+        window_half_size::Tuple{Int64, Int64} = (window_size .- 1) ./ 2
 
         for iter_repeat in 1:max_repeats
 
-            Δ_u, coeffs = single_lap(target, source_reg, filter_num, filter_half_size, window_size)
+            Δ_u = single_lap(target, source_reg, filter_half_size, window_size, filter_num)
 
             # USE INPAINTING TO CORRECT U_EST:
             # 1) replicate borders
@@ -342,7 +358,7 @@ function polyfilter_lap(target, source)
                 LAP_julia.inpaint.inpaint_nans!(Δ_u)
             end
             # SMOOTH U_EST WITH A GAUSSIAN FILTER:
-            Δ_u = LAP_julia.helpers.clean_using_gaussain(Δ_u, window_half_size)
+            Δ_u = LAP_julia.clean_using_gaussain(Δ_u, window_half_size)
 
             # add the Δ_u to my u_est
             u_est = u_est + Δ_u
@@ -356,10 +372,10 @@ function polyfilter_lap(target, source)
             # depending on the size of the filter used, warp the source image closer to target using u_est
             if iter < interpol_change_index
                 # linear interpolation
-                source_reg = LAP_julia.interpolation.imWarp_replicate(source, real(u_est), imag(u_est))
+                source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
             else
                 # more accurate slower interpolation TODO
-                source_reg = LAP_julia.interpolation.imWarp_replicate(source, real(u_est), imag(u_est))
+                source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
             end
 
         end
@@ -373,12 +389,19 @@ function polyfilter_lap(target, source)
 end
 
 # NOTE: can parallelize
+"""
+    multi_mat_div(A, b)
+
+Return `E`, where `E[i, :]` is the solutution of the least squares problem ``\\min\\|D_(i)x - c_(i)\\|^2`` for each ``D_(i)``
+and ``c_(i)``, where ``D_(i)`` is `A[:, :, i]`, ``c_(i)`` is `b[:, i]` and ``i`` is the size of the second dimension
+of `b` and third dimension of `A`. In other words, each row of `E` is the solution to one matrix from `A` and it's
+corresponding vector from `b`.
+"""
 function multi_mat_div(A, b)
     res = zeros(size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
     for k in axes(A)[3]
         @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
-        qr([1 1; 1 1], Val(true))
     end
     return transpose(res)
 end
@@ -386,6 +409,13 @@ end
 # NOTE: here maybe an average could be better so the size of the window
 # doest effect the number range of the results
 # also might improve the speed if the pixels are saved into a tmp var
+"""
+    function window_sum!(filter_result, pixels, image_size, window_size)
+
+Filter the array `pixels` of shape `image_size` with a filter that performs a sum of values of the area `window_size`
+with each pixel as the center. Store the result in `filter_result`.
+The filtering uses `"symmetric"` padding.
+"""
 function window_sum!(filter_result, pixels, image_size, window_size)
     # prepare a kernel of ones of the window size
     ones_arr_1 = ones(window_size[1])
@@ -394,7 +424,7 @@ function window_sum!(filter_result, pixels, image_size, window_size)
 
     # filtering gets a sum of pixels of window size in each coord
     imfilter!(reshape(filter_result, image_size), reshape(pixels, image_size), ones_kernel, "symmetric")
-    #return filtered_result[:]
+    return nothing
 end
 
 end

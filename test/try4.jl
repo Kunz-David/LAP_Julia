@@ -6,6 +6,9 @@ mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
               ones(tile_size, tile_size) zeros(tile_size, tile_size)]
 
 chessboard = repeat(mini_board, outer=(convert(Integer,(board_size/2)), convert(Integer,(board_size/2))))
+img = chessboard
+
+img = gen_chess();
 
 ###
 
@@ -88,7 +91,7 @@ flow = gen_rand_flow(size(img), 20, 1000);
 showflow(flow)
 
 # generate warpped image
-imgw = LAP_julia.interpolation.imWarp_replicate(img, real(flow), imag(flow));
+imgw = LAP_julia.interpolation.warp_img(img, real(flow), imag(flow));
 
 # params:
 #lap
@@ -169,17 +172,20 @@ filter_size = 21
 gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
 kernel = kernelfactors((gaus, gaus))
 
-ImageFiltering.factorkernel(kernel)
+
 
 typeof(kernel) <: ImageFiltering.ProcessedKernel
 typeof(kernel) <: Union{ImageFiltering.ArrayLike, ImageFiltering.Laplacian}
 
 # params of imfilter function
-imgfilt = similar(img)
-inds = CartesianIndex(50, 50)
+imgfilt = copy(img)
+# inds = CartesianIndex(50, 50)
 
 # The filtering that errors:
-imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, img, kernel, "symmetric", (30:40, 30:40))
+# imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, img, kernel, "symmetric", (30:40, 30:40))
+imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, img, kernel, Pad(:Symmetric), (50:50, 50:50))
+
+imgshow(imgfilt)
 
 
 ### alternative to imfilter inds
@@ -194,3 +200,44 @@ mapped_img = mapwindow(f, img, (3, 3), "symmetric", (2:8, 2:8))
 imgshow(mapped_img)
 
 ###
+
+flow = gen_rand_flow(size(img), 30, 1000)
+
+
+
+one = [1 + 0im, 2 - im]
+two = [0 + 6im, 3 + im]
+
+one = [1 + 0im]
+two = [0 + im]
+
+import LAP_julia: helpers.angle_rms
+
+angle_rms(one, two)
+
+rad2deg.(angle.(one).-angle.(two))
+
+
+### mse
+
+
+function mse2(x, y)
+    @assert (size(x) == size(y)) "sizes of $x and $y don't match"
+    return 1/length(x) * sum((x .- y).^2)
+end
+
+function mse1(x, y)
+    @assert (size(x) == size(y)) "sizes of $x and $y don't match"
+    return mean((x .- y).^2)
+end
+
+function mean(x)
+    sum(x)/length(x)
+end
+
+ran = rand(123)
+dan = rand(123)
+
+mse1(ran, dan)
+mse2(ran, dan)
+mse1(ran, dan) ≈ mse2(ran, dan)

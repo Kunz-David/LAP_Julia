@@ -137,6 +137,15 @@ b = zeros(2, 3)
 A = rand(100, 100, 100)
 b = rand(100, 100)
 
+using BenchmarkTools
+@benchmark outpin = pinv(A[:, :, 1])*b[:, 1]
+@benchmark outqr = A[:, :, 1] \ b[:, 1]
+@benchmark outqrpiv = qr(A[:, :, 1], Val(true)) \ b[:, 1]
+
+outpin ≈ outqr
+
+outqrpiv ≈ outpin
+
 A[:, :, 1] = [1 0; 0 1]
 A[:, :, 2] = [1 0; 0 1]
 A[:, :, 3] = [1 0; 0 1]
@@ -147,10 +156,6 @@ b[:, 3] = [0; 4]
 
 A[:, :, 1]\b[:, 1]
 
-# ??? try it with * broadcast
-res = (\).(A, b)
-
-tmp = (*).(A, b)
 
 save = zeros(100, 100)
 
@@ -169,12 +174,14 @@ function multi_mat_div(A, b)
     res = zeros(size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
     for k in axes(A)[3]
-        @views res[:, k] = A[:, :, k] \ b[:, k]
+        @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
     end
-    return res
+    return transpose(res)
 end
 
-@time multi_mat_div(A, b)
+@code_warntype multi_mat_div(A, b)
+
+
 
 #---
 

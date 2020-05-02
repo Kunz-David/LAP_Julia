@@ -45,11 +45,13 @@ mini_board = [zeros(tile_size, tile_size) ones(tile_size, tile_size);
 chessboard = repeat(mini_board, outer=(convert(Integer,(board_size/2)), convert(Integer,(board_size/2))))
 img = chessboard
 
+img = gen_chess()
+
 # genrate flow
 flow = gen_rand_flow(size(img), 20, 1000);
 
 # generate warpped image
-imgw = LAP_julia.interpolation.imWarp_replicate(img, real(flow), imag(flow))
+imgw = LAP_julia.interpolation.warp_img(img, real(flow), imag(flow))
 
 # show imgw
 imgshow(imgw)
@@ -62,10 +64,10 @@ minimum(filter(!isnan, real(flow)))
 
 ### RUN OPTIFLOW:
 
-u_est, source_reg, figs = LAP_julia.lap.polyfilter_lap(img, imgw);
+u_est, source_reg, figs = polyfilter_lap(img, imgw);
 
 # compare with a single lap:
-u_sin_est, coeffs = single_lap(img, imgw, 3, 32, [65, 65]);
+u_sin_est = single_lap(img, imgw, 32, [65, 65], 3)
 showflow(u_sin_est)
 
 LAP_julia.inpaint.inpaint_nans!(u_sin_est)

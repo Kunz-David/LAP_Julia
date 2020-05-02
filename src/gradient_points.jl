@@ -1,7 +1,7 @@
 module gradient_points
 
-export find_keypoints_from_gradients
-
+using StatsBase
+using Images, ImageFiltering, LinearAlgebra
 using LAP_julia
 
 """
@@ -18,7 +18,14 @@ coordinate and `grad[2]` wrt to the second...
 #     grad=[Images.imfilter(f,s[i]) for i in 1:2]   # filtrujeme ve smeru x a y
 #     return grad,Images.mag(grad[1],grad[2]) # vracime gradient a jeho normu
 # end
+"""
+    gradient_magnitude(f)
+Return the directional derivatives (components of the gradient)
+and the gradient mag for both color and grayscale images. For
+`spatialorder(f)=="xy"`, `grad[1]` is a derivative wrt x, the first
+coordinate and `grad[2]` wrt to the second...
 
+"""
 function gradient_magnitude(f)
     @assert(length(size(f))==2) # only 2D supported for the moment
     s=ImageFiltering.Kernel.sobel()     # vytvorime Sobelovsky filtr ve smeru x a y
@@ -28,7 +35,6 @@ end
 
 
 # V dalši funkci hledáme tzv. klíčové body, tedy body ve kterých budeme později hledat neznámou deformaci (posunutí) ve vhodném okénku (ROI)
-using Images, ImageFiltering, LinearAlgebra
 
 
 """
@@ -42,7 +48,7 @@ should be equal.
 The coordinates are in physical units.
 
 """
-function find_keypoints_from_gradients(f::Array{T, 2}; spacing=10, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
+function find_keypoints_from_gradients(f::Image; spacing=10, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[])
 
     # calculate gradient mag
     grad, mag = gradient_magnitude(ImageFiltering.imfilter(f, ImageFiltering.Kernel.gaussian(sigma)))
@@ -69,7 +75,7 @@ function find_keypoints_from_gradients(f::Array{T, 2}; spacing=10, number::Int=1
     ind = sortperm(reshape(mag,length(mag)),alg=PartialQuickSort(2*number*spacing^(N-1)),rev=true)
     numkpts = 0 # number of keypoints found so far
 
-    kpts = Array{LAP_julia.SimpleKeypoint}(undef, number)
+    kpts = Array{SimpleKeypoint}(undef, number)
     pspacing = map(float, Images.pixelspacing(f))
     rspacing = spacing ./ pspacing
     # go through indices from the largest gradient and put each
@@ -88,7 +94,7 @@ function find_keypoints_from_gradients(f::Array{T, 2}; spacing=10, number::Int=1
 
         norm = LinearAlgebra.norm(Float64[ grad[k][i] for k=1:N], 2) * nlength
         @assert (mag[i] ≈ norm) (mag[i], norm)
-        kpts[numkpts] = LAP_julia.SimpleKeypoint(ppos, norm)
+        kpts[numkpts] = SimpleKeypoint(ppos, norm)
         # prevent the neighbors from being added
         fill_ellipse!(mag, ppos, spacing, marker)
     end # for i
@@ -99,7 +105,6 @@ function find_keypoints_from_gradients(f::Array{T, 2}; spacing=10, number::Int=1
     return kpts, mag_save, mag
 end # function find_keypoints_from_gradients
 
-using StatsBase
 
 function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
 
@@ -123,7 +128,7 @@ function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, numbe
     end
     # sort indices by decreasing mag
 
-    kpts = Array{LAP_julia.SimpleKeypoint}(undef, number)
+    kpts = Array{SimpleKeypoint}(undef, number)
     # go through indices from the largest gradient and put each
     for k in 1:number
 
@@ -137,7 +142,7 @@ function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, numbe
         N = 2
         norm = LinearAlgebra.norm(Float64[ grad[l][ind] for l=1:N], 2) * nlength
         @assert mag_save[ind] ≈ norm
-        kpts[k] = LAP_julia.SimpleKeypoint(ppos, norm)
+        kpts[k] = SimpleKeypoint(ppos, norm)
         # prevent the neighbors from being added
         fill_ellipse!(mag, ppos, spacing, marker)
     end # for i
