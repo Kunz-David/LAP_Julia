@@ -17,30 +17,33 @@ using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_julia"))
     ENV["PYTHON"] = "..ENTER USER.../.julia/conda/3/bin"
     ```
 
-```@example
-a = 1
-b = 2
-a + b
+## Manual Outline
+
+```@contents
+Pages = [
+    "man/guide.md",
+    "man/examples.md",
+    "man/syntax.md",
+    "man/doctests.md",
+    "man/hosting.md",
+    "man/latex.md",
+    "man/contributing.md",
+]
+Depth = 1
 ```
 
 
-```@example
+## Library Outline
+
+```@contents
+Pages = ["lib/public.md", "lib/private.md"]
+```
+
+<!-- ```@example
 using LAP_julia
 flow = gen_rand_flow()
 showflow(flow)
-```
-
-```julia
-# some julia code
-d = 12
-```
+``` -->
 
 ```@contents
-```
-
-## Usage
-
-## Index
-
-```@index
 ```
