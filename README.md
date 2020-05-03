@@ -1,5 +1,8 @@
 # LAP_julia
 
+![Documentation](https://github.com/Kunz-David/LAP_Julia.jl/workflows/Documentation/badge.svg)
+__Check out the new documentation!__
+
 Local all-pass filtering registration method implemented in Julia from [this paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf).
 
 
@@ -7,13 +10,13 @@ Local all-pass filtering registration method implemented in Julia from [this pap
 
 For the latest version of this module open up a Julia terminal and type:
 ```Julia
-using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_Julia"))
+using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_julia"))
 using LAP_julia
 ```
 
 For the latest "documented" and working version of this module open up a Julia terminal and type:
 ```Julia
-using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_Julia", rev="8312abfeb6fc4f63b512d6f3fe41096c5b667b02"))
+using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_julia", rev="8312abfeb6fc4f63b512d6f3fe41096c5b667b02"))
 using LAP_julia
 ```
 
