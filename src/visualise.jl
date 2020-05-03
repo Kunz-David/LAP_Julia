@@ -58,7 +58,7 @@ Return a figure with the displacement field `flow` by default skipping some vect
 
 See also: [`imgshow`](@ref), [`imgshowflow`](@ref), [`warp_imgshowflow`](@ref)
 """
-function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, legend::Bool=true, figtitle::String="Flow", ret::String=:figure)
+function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, legend::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
 
     # set defaults
     if skip_count == nothing

@@ -13,7 +13,7 @@ makedocs(
 
 
 deploydocs(
-    repo = "github.com/Kunz-David/LAP_julia.jl.git",
+    repo = "github.com/Kunz-David/LAP_Julia.jl.git",
 )
 
 
