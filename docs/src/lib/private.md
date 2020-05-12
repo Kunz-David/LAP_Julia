@@ -20,7 +20,6 @@ LAP_julia.angle_mean
 LAP_julia.vec_len
 LAP_julia.mean
 LAP_julia.inpaint.inpaint_nans!
-LAP_julia.interpolation.warp_img
 LAP_julia.lap.multi_mat_div
 LAP_julia.lap.window_sum!
 ```

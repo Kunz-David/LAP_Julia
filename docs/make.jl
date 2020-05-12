@@ -2,16 +2,23 @@ push!(LOAD_PATH,"../src/")
 
 using Documenter, LAP_julia
 
-println("\tPRINTING ENV[ GH ACTIONS] HERE:")
-println(get(ENV, "GITHUB_ACTIONS", nothing))
-
 makedocs(
-    sitename = "Local All Pass registration",
+    sitename = "Local All Pass registration in Julia",
     pages = ["index.md",
-             "Public API" => "lib/public.md",
-             "Internals" => "lib/private.md"],
+             "Usage" => Any[
+                "Examples" => Any[
+                   "man/examples/examples.md",
+                   "man/examples/single_lap.md"
+                   ]
+                ],
+             "Library" => Any[
+                "Public" => "lib/public.md",
+                "Internals" => "lib/private.md"
+                ]
+             ],
     # see here https://juliadocs.github.io/Documenter.jl/stable/man/guide/
-    format = Documenter.HTML(prettyurls = get(ENV, "GITHUB_ACTIONS", nothing) == "true")
+    format = Documenter.HTML(prettyurls = get(ENV, "GITHUB_ACTIONS", nothing) == "true"),
+    authors = "David Kunz"
     )
 
 

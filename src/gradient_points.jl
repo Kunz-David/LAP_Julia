@@ -1,5 +1,7 @@
 module gradient_points
 
+export find_keypoints_from_gradients
+
 using StatsBase
 using Images, ImageFiltering, LinearAlgebra
 using LAP_julia
@@ -59,7 +61,7 @@ function find_keypoints_from_gradients(f::Image; spacing=10, number::Int=100, si
 
     #const
     marker = zero(eltype(mag)) # marker for masked gradients we don't want keypoints at the points of 0 gradient
-    marker = 0.25
+    # marker = 0.25
     if mask != []
         @assert( size(mag) == size(mask))
         for i = 1:length(mag)
@@ -106,50 +108,53 @@ function find_keypoints_from_gradients(f::Image; spacing=10, number::Int=100, si
 end # function find_keypoints_from_gradients
 
 
-function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
 
-    # calculate gradient mag
-    grad, mag = gradient_magnitude(ImageFiltering.imfilter(f, ImageFiltering.Kernel.gaussian(sigma)))
 
-    mag_save = copy(mag)
-    mag = mag.^4
 
-    @assert typeof(mag) <: Array
-
-    #const
-    marker = zero(eltype(mag)) # marker for masked gradients we don't want keypoints at the points of 0 gradient
-    if mask != []
-        @assert( size(mag) == size(mask))
-        for i = 1:length(mag)
-            if mask[i] == 0
-                mag[i] = marker
-            end
-        end
-    end
-    # sort indices by decreasing mag
-
-    kpts = Array{SimpleKeypoint}(undef, number)
-    # go through indices from the largest gradient and put each
-    for k in 1:number
-
-        ind = wsample(Array(1:length(mag)), mag[:])
-
-        # @assert(mag[ind] > 10 * eps(Float64))
-        # good keypoint, let"s add it
-
-        ppos = Tuple(CartesianIndices(size(mag))[ind]) # position in pixel units
-
-        N = 2
-        norm = LinearAlgebra.norm(Float64[ grad[l][ind] for l=1:N], 2) * nlength
-        @assert mag_save[ind] ≈ norm
-        kpts[k] = SimpleKeypoint(ppos, norm)
-        # prevent the neighbors from being added
-        fill_ellipse!(mag, ppos, spacing, marker)
-    end # for i
-
-    return kpts, mag_save, mag
-end # function find_keypoints_from_gradients
-
+# function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
+#
+#     # calculate gradient mag
+#     grad, mag = gradient_magnitude(ImageFiltering.imfilter(f, ImageFiltering.Kernel.gaussian(sigma)))
+#
+#     mag_save = copy(mag)
+#     mag = mag.^4
+#
+#     @assert typeof(mag) <: Array
+#
+#     #const
+#     marker = zero(eltype(mag)) # marker for masked gradients we don't want keypoints at the points of 0 gradient
+#     if mask != []
+#         @assert( size(mag) == size(mask))
+#         for i = 1:length(mag)
+#             if mask[i] == 0
+#                 mag[i] = marker
+#             end
+#         end
+#     end
+#     # sort indices by decreasing mag
+#
+#     kpts = Array{SimpleKeypoint}(undef, number)
+#     # go through indices from the largest gradient and put each
+#     for k in 1:number
+#
+#         ind = wsample(Array(1:length(mag)), mag[:])
+#
+#         # @assert(mag[ind] > 10 * eps(Float64))
+#         # good keypoint, let"s add it
+#
+#         ppos = Tuple(CartesianIndices(size(mag))[ind]) # position in pixel units
+#
+#         N = 2
+#         norm = LinearAlgebra.norm(Float64[ grad[l][ind] for l=1:N], 2) * nlength
+#         @assert mag_save[ind] ≈ norm
+#         kpts[k] = SimpleKeypoint(ppos, norm)
+#         # prevent the neighbors from being added
+#         fill_ellipse!(mag, ppos, spacing, marker)
+#     end # for i
+#
+#     return kpts, mag_save, mag
+# end # function find_keypoints_from_gradients
+#
 
 function fill_ellipse!(mag, pos, spacing, marker)
     mag_size = size(mag)

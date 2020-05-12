@@ -2,10 +2,28 @@ module visualise
 
 export showflow, imgshowflow, imgshow, warp_imgshowflow
 
-using PyPlot: quiver, gcf, figure, imshow, subplots, title, xlabel, ylabel
+using PyPlot #: quiver, gcf, figure, imshow, subplots, title, xlabel, ylabel, gca
 import LAP_julia: interpolation.warp_img
 using LAP_julia
 using Printf
+
+# set plot size defaults
+SMALL = 8
+MEDIUM = 10
+LARGE = 12
+
+rc("font", size=SMALL)          # controls default text sizes
+rc("axes", titlesize=LARGE)     # fontsize of the axes title
+rc("axes", labelsize=SMALL)     # fontsize of the x and y labels
+rc("xtick", labelsize=SMALL)    # fontsize of the tick labels
+rc("ytick", labelsize=SMALL)    # fontsize of the tick labels
+rc("legend", fontsize=SMALL)    # legend fontsize
+rc("figure", titlesize=LARGE)   # fontsize of the figure title
+rc("figure", figsize=(6,6))
+rc("figure", dpi=400)
+rc("savefig", dpi=400)
+# rcdefaults()
+
 
 """
     imgshow(img; <keyword arguments>)
@@ -52,13 +70,13 @@ Return a figure with the displacement field `flow` by default skipping some vect
 - `skip_count=nothing`: the number of vectors to skip between each displayed vector. By default set so that the output is ``20 × 20`` vectors.
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `mag::Real=1`: magnify the plotted vectors.
-- `legend::Bool=true`: add legend with maximum vector length.
+- `key::Bool=true`: add key with maximum vector length.
 - `figtitle::String="Flow"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
 
 See also: [`imgshow`](@ref), [`imgshowflow`](@ref), [`warp_imgshowflow`](@ref)
 """
-function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, legend::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
+function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
 
     # set defaults
     if skip_count == nothing
@@ -95,7 +113,7 @@ function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, lege
     color = (color .- minimum(color)) ./ maximum(color)
 
     if fig == nothing
-        fig, ax = subplots(dpi = 300)
+        fig, ax = subplots(dpi = 400)
     else
         fig = fig
         ax = gca()
@@ -106,15 +124,15 @@ function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, lege
 
     # angles='uv' sets the angle of vector by atan2(u,v), angles='xy' draws the vector from (x,y) to (x+u, y+v)
     ax.set_aspect(1.)
-    xlabel("x - real")
+    xlabel("x - real\n")
     ylabel("y - imag")
     title(figtitle)
 
-    if legend == true
+    if key == true
         # subplots_adjust(bottom=0.1)
         label_text = "length = " * @sprintf("%0.2f", max)
-        ax.quiverkey(q, X=0.19, Y = 0.04, U = max, coordinates="figure",
-        label=label_text,labelpos = "E")
+        ax.quiverkey(q, X=0.35, Y = 0.2, U = max, coordinates="inches",
+        label=label_text, labelpos = "E")
     end
 
     if ret == :figure
@@ -135,16 +153,16 @@ Return a figure with an image `img` and displacement field `flow`.
 - `skip_count=nothing`: the number of vectors to skip between each displayed vector. By default set so that the output is ``20 × 20`` vectors.
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `mag::Real=1`: magnify the plotted vectors.
-- `legend::Bool=true`: add legend with maximum vector length.
+- `key::Bool=true`: add key with maximum vector length.
 - `figtitle::String="Iamge with Flow"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
 
 See also: [`imgshow`](@ref), [`showflow`](@ref), [`warp_imgshowflow`](@ref)
 
 """
-function imgshowflow(img, flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, legend::Bool=true, figtitle::String="Image with Flow", ret::String=:figure)
+function imgshowflow(img, flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Image with Flow", ret::Symbol=:figure)
     fig = imgshow(img, fig=fig, figtitle="", ret=:figure)
-    showflow(flow, skip_count=skip_count, fig=fig, mag=mag, legend=legend, figtitle=figtitle, ret=ret);
+    showflow(flow, skip_count=skip_count, fig=fig, mag=mag, key=key, figtitle=figtitle, ret=ret);
 end
 
 """
@@ -158,15 +176,15 @@ Return a figure with an image and a displacement field, where the image is warpe
 - `skip_count=nothing`: the number of vectors to skip between each displayed vector. By default set so that the output is ``20 × 20`` vectors.
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `mag::Real=1`: magnify the plotted vectors.
-- `legend::Bool=true`: add legend with maximum vector length.
+- `key::Bool=true`: add key with maximum vector length.
 - `figtitle::String="Iamge with Flow"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
 
 See also: [`imgshow`](@ref), [`showflow`](@ref), [`imgshowflow`](@ref)
 """
-function warp_imgshowflow(img, flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, legend::Bool=true, figtitle::String="Warped Image with Flow", ret::String=:figure)
+function warp_imgshowflow(img, flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Warped Image with Flow", ret::Symbol=:figure)
     imgw = warp_img(img, -real(flow), -imag(flow))
-    imgshowflow(imgw, flow, skip_count=skip_count, fig=fig, mag=mag, legend=legend, figtitle=figtitle, ret=ret);
+    imgshowflow(imgw, flow, skip_count=skip_count, fig=fig, mag=mag, key=key, figtitle=figtitle, ret=ret);
 end
 
 end #module

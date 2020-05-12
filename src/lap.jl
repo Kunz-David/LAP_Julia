@@ -32,7 +32,7 @@ end
 #
 
 """
-    single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, filter_num::Integer=3, window_size)
+    single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, window_size, filter_num::Integer=3)
 
 Return an estimate of a smoothly varying flow of size of `image_1` which is the displacement that transforms `image_2` closer to `image_1`.
 
@@ -146,12 +146,32 @@ function single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, w
     return u_est
 end
 
+using ComputationalResources, Images
 
-function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, window_size, points::Array{SimpleKeypoint,1})
+# function filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
+#     padded = padarray(img, Pad(:symmetric, filter_half_size, filter_half_size))
+#
+#     @simd for k in 1:size(points, 2)
+#         ind_filt = (points[1, k]:points[1, k], points[2, k]:points[2, k])
+#         imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), ind_filt)
+#     end
+# end
+
+function filt_onebyone!(imgfilt, img, kernel, fhs, points)
+    padded = padarray(img, Pad(:symmetric, fhs, fhs))
+
+    @simd for k in 1:size(points, 2)
+        ind_filt = (points[1, k]-fhs:points[1, k]+fhs, points[2, k]-fhs:points[2, k]+fhs)
+        imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), ind_filt)
+    end
+end
+
+
+function single_lap(image_1::Image, image_2::Image, filter_half_size::Integer, window_size, filter_num, points)
 
     image_size = size(image_1)
     pixel_count = length(image_1)
-    point_count = length(points)
+    point_count = size(points, 2)
     filter_size = 2 * filter_half_size + 1
 
     # Prepare filters:
@@ -166,42 +186,42 @@ function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, wi
     basis = zeros(filter_size, filter_size, filter_num)
 
     # dif = (points of forward image - points of backward image) for each filter
-    dif = zeros(length(points), filter_num)
+    dif = zeros(image_size..., filter_num)
 
     if filter_num == 3
         # temporary place to store filtered images
-        tmp_filtered_1 = similar(image_1)
-        tmp_filtered_2 = similar(image_2)
+        tmp_filtered_1 = zeros(image_size)
+        tmp_filtered_2 = zeros(image_size)
 
         # basis 1 - (gaus, gaus) both forward and backward
         kernf_1 = kernelfactors((gaus, gaus))
         basis[:, :, 1] = broadcast(*, kernf_1...)
-        imfilter!(tmp_filtered_1, image_1, kernf_1, "symmetric")
-        imfilter!(tmp_filtered_2, image_2, kernf_1, "symmetric")
+        filt_onebyone!(tmp_filtered_1, image_1, kernf_1, filter_half_size, points)
+        filt_onebyone!(tmp_filtered_2, image_2, kernf_1, filter_half_size, points)
         dif[:, :, 1] = tmp_filtered_2 - tmp_filtered_1
 
         # basis 2 - (gaus, gaus_der_flip) as forward, (gaus, gaus_der) as backward
         kernf_2f = kernelfactors((gaus, gaus_der_flip))
         basis[:, :, 2] = broadcast(*, kernf_2f...)
-        imfilter!(tmp_filtered_1, image_1, kernf_2f, "symmetric")
+        filt_onebyone!(tmp_filtered_1, image_1, kernf_2f, filter_half_size, points)
         kernf_2b = kernelfactors((gaus, gaus_der))
-        imfilter!(tmp_filtered_2, image_2, kernf_2b, "symmetric")
+        filt_onebyone!(tmp_filtered_2, image_2, kernf_2b, filter_half_size, points)
         dif[:, :, 2] = tmp_filtered_2 - tmp_filtered_1
 
         # basis 3 - (gaus_der_flip, gaus) as forward, (gaus_der, gaus) as backward
         kernf_3f = kernelfactors((gaus_der_flip, gaus))
         basis[:, :, 3] = broadcast(*, kernf_3f...)
-        imfilter!(tmp_filtered_1, image_1, kernf_3f, "symmetric")
+        filt_onebyone!(tmp_filtered_1, image_1, kernf_3f, filter_half_size, points)
         kernf_3b = kernelfactors((gaus_der, gaus))
-        imfilter!(tmp_filtered_2, image_2, kernf_3b, "symmetric")
+        filt_onebyone!(tmp_filtered_2, image_2, kernf_3b, filter_half_size, points)
         dif[:, :, 3] = tmp_filtered_2 - tmp_filtered_1
     end
 
-    # dif = reshape(dif, (:, filter_num))
+    dif = reshape(dif, (:, filter_num))
 
     # prepare matrices for linear system of equations
-    A = zeros(filter_num-1, filter_num-1, point_count)
-    b = zeros(filter_num-1, point_count)
+    A = zeros(filter_num-1, filter_num-1, pixel_count)
+    b = zeros(filter_num-1, pixel_count)
 
     for k in 1:filter_num-1
         for l in k:filter_num-1
@@ -212,10 +232,10 @@ function single_lap(image_1, image_2, filter_num::Int, filter_half_size::Int, wi
     end
 
     # Perform Gauss elimination on all pixels in parallel:
-    # coeffs will be of shape: point_count, filter_num-1
+    # coeffs will be of shape: pixel_count, filter_num-1
     @views coeffs = multi_mat_div(A, b)
     # adding ones so that all base filters have their coefficients even the first one
-    all_coeffs = [ones(point_count) coeffs]
+    all_coeffs = [ones(pixel_count) coeffs]
 
     # make a border mask. Is 0 if its in a border of filter_half_size size.
     window_half_size = Int64.((window_size .- 1) ./ 2)
@@ -278,23 +298,6 @@ the `target` image and then using this warped closer image as the source image i
 See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_imgshowflow`](@ref), [`Flow`](@ref)
 """
 function polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
-
-    # ********************** #
-    # ****** SETTINGS ****** #
-    # ********************** #
-
-    # choose filter basis size. 3 or 6
-    filter_num = 3
-
-    # maximum number of times an iteration of one filter size can be repeated
-    max_repeats = 1
-
-    # verbose prints
-    display = true
-
-    # ********************** #
-    # ******** CODE ******** #
-    # ********************** #
 
     # convert images to floats
     source = Float32.(source)
@@ -392,8 +395,8 @@ end
 """
     multi_mat_div(A, b)
 
-Return `E`, where `E[i, :]` is the solutution of the least squares problem ``\\min\\|D_(i)x - c_(i)\\|^2`` for each ``D_(i)``
-and ``c_(i)``, where ``D_(i)`` is `A[:, :, i]`, ``c_(i)`` is `b[:, i]` and ``i`` is the size of the second dimension
+Return `E`, where `E[i, :]` is the solutution of the least squares problem ``\\min\\|D_ix - c_i\\|^2`` for each ``D_i``
+and ``c_i``, where ``D_i`` is `A[:, :, i]`, ``c_i`` is `b[:, i]` and ``i`` is the size of the second dimension
 of `b` and third dimension of `A`. In other words, each row of `E` is the solution to one matrix from `A` and it's
 corresponding vector from `b`.
 """

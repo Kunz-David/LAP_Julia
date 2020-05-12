@@ -39,6 +39,11 @@ gen_chess
 Image
 Flow
 ```
+### Interpolation
+```@docs
+warp_img
+```
+
 ### Other
 ```@docs
 LAP_julia.gradient_points.find_keypoints_from_gradients

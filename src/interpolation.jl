@@ -1,5 +1,6 @@
 module interpolation
 
+export warp_img
 using Interpolations, ColorVectorSpace, ImageFiltering, Images, LAP_julia
 
 """

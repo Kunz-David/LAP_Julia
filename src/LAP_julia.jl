@@ -13,7 +13,9 @@ export
     # Types
     SimpleKeypoint, Image, Flow,
     # Some useful LAP functions
-    find_keypoints_from_gradients
+    find_keypoints_from_gradients,
+    # Interpolation
+    warp_img
 
 struct SimpleKeypoint
     pos::Tuple{T, T} where T <: Int
@@ -54,7 +56,7 @@ using .inpaint: inpaint_nans!
 using .gradient_points
 # using .visualise: showflow, imgshowflow, imgshow
 using .data_gen
-# using .interpolation
+using .interpolation
 
 
 loaded() = println("LAP_julia succesfully loaded!")

@@ -82,8 +82,9 @@ gcf()
 
 
 ###
+using LAP_julia
 
-img = chessboard
+img = gen_chess()
 
 # genrate flow
 flow = gen_rand_flow(size(img), 20, 1000);
@@ -111,12 +112,16 @@ using PyPlot
 # see points
 pos_x = [point.pos[1] for point in points]
 pos_y = [point.pos[2] for point in points]
+
+pos = transpose([pos_x pos_y])
+pos[:, 1]
+
 imgshow(img)
 PyPlot.scatter(pos_y, pos_x, marker = :x)
 gcf()
 
 
-u_est, coeffs = single_lap(image_1, image_2, filter_num, filter_half_size, window_size, points::Array{SimpleKeypoint,1});
+u_est, coeffs = single_lap(image_1, image_2, filter_half_size, window_size, 3, pos);
 
 showflow(u_est)
 
@@ -241,3 +246,6 @@ dan = rand(123)
 mse1(ran, dan)
 mse2(ran, dan)
 mse1(ran, dan) ≈ mse2(ran, dan)
+
+
+####
