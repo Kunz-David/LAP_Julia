@@ -58,13 +58,14 @@ using LAP_julia
 #### Plan praci
 1) Dodelat `polyfilter_lap_at_points` aby fungovala presnejsi
 2) Psat psat psat (potrebuji mit 10 normostran do 29.5.2020) -> formou na semestralni projekt
-  a) co je registrace, na co je a porovnani s tim co se dela ted ve svete
-  b) z jakych metod vychazim a jak se je snazim zrychlit/zlepsit
-  c) jak to probihalo, co jsem pouzil, co jsem zkusil...
-  d) jake jsou moje vysledky
+    1) co je registrace, na co je a porovnani s tim co se dela ted ve svete
+    2) z jakych metod vychazim a jak se je snazim zrychlit/zlepsit
+    3) jak to probihalo, co jsem pouzil, co jsem zkusil...
+    4) jake jsou moje vysledky
 3) male prace -> dokumentace?
 4) ...
 
+----------
 
 Kod pro vyzkouseni `single_lap_at_points`
 ```julia
