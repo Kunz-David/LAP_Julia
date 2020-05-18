@@ -55,7 +55,7 @@ using LAP_julia
   - je potreba dodelat Examples do hezci formy.
   - chtel bych jeste pridat nejake lepsi porovnani vysledku metody a originalu, asi by stacilo neco jako `showflow(orig .- estim)`
 
-### Plan praci
+#### Plan praci
 1) Dodelat `polyfilter_lap_at_points` aby fungovala presnejsi
 2) Psat psat psat (potrebuji mit 10 normostran do 29.5.2020) -> formou na semestralni projekt
   a) co je registrace, na co je a porovnani s tim co se dela ted ve svete

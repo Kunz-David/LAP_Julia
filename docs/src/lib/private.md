@@ -2,11 +2,6 @@
 
 Documentation for `LAP_julia.jl`'s internal interface.
 
-## Index
-
-```@index
-```
-
 ## Functions
 
 ```@autodocs
