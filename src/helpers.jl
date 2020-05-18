@@ -126,6 +126,17 @@ function mean(x)
     sum(x)/length(x)
 end
 
+"""
+    inds_to_points(inds::Array{CartesianIndex, 1})
+
+Transform an array of `CartersianIndexes` to an array of where each column is a vector of indices of the input array.
+"""
+function inds_to_points(inds::Array{CartesianIndex, 1})
+    pos_x = [ind[1] for ind in inds]
+    pos_y = [ind[2] for ind in inds]
+    return transpose([pos_x pos_y])
+end
+
 
 # function maxim(a)
 #     maximum(x->isnan(x) ? -Inf : x, a)

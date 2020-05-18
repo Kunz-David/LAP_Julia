@@ -184,15 +184,179 @@ Juno.@enter imfilter!(imgfilt2, img, kernel, "symmetric")
 Juno.@enter imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), (1:1, 1:2))
 
 
+##
+using LAP_julia
+include("useful.jl")
+
+img = testimage("lena_gray")
+img = Float32.(img)
+
+flow = gen_rand_flow(size(img), 15, 100)
+showflow(flow)
+
+# generate warpped image
+imgw = LAP_julia.interpolation.warp_img(img, -real(flow), -imag(flow));
+
+# params:
+#lap
+filter_num = 3;
+fhs = 25;
+window_size = [51, 51];
+#points
+point_count = 25;
+spacing = 40;
+
+mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
+
+# get points
+inds = find_edge_points(img, sigma = 1, number = point_count, spacing = spacing, mask = mask);
+
+# reform points:
+pos_x = [ind[1] for ind in inds]
+pos_y = [ind[2] for ind in inds]
+points = LAP_julia.inds_to_points(inds)
+
+# see points
+imgshow(img)
+PyPlot.scatter(pos_y, pos_x, marker = :x); gcf()
+
+# run methods
+flow_est_all = single_lap(img, imgw, fhs, window_size, 3)
+# flow_est_points = single_lap(img, imgw, fhs, window_size, 3, points)
+flow_est_new, all_coeffs = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+
+completed_flow = interpolate_flow(flow_est_new, inds)
+
+# compare resulting estimations:
+# show calculated flows
+showflow(completed_flow, figtitle="flow estimated from lap at points")
+showflow(flow, figtitle="original flow")
+
+# show difference and mean squared error of both
+showflow(flow .- completed_flow, figtitle="orig - estim from points")
+LAP_julia.mse(flow, completed_flow)
+mag_mse_points = LAP_julia.vec_len(LAP_julia.mse(flow, completed_flow))
+println("Points: magnitude of the vector of the mean squared error is: ", mag_mse_points)
+
+showflow(flow .- flow_est_all, figtitle="orig - estim classic single")
+inpainted = copy(flow_est_all); LAP_julia.inpaint_nans!(inpainted)
+LAP_julia.mse(flow, inpainted)
+mag_mse_classic = LAP_julia.vec_len(LAP_julia.mse(flow, inpainted))
+println("Classic: magnitude of the vector of the mean squared error is: ", mag_mse_classic)
+
+# whole process speed comparison:
+# new method
+bench_find_points = @benchmark inds = find_edge_points(img, sigma = 1, number = point_count, spacing = spacing, mask = mask)
+bench_lap_points = @benchmark flow_est_new, all_coeffs = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+bench_fit_points = @benchmark completed_flow = interpolate_flow(flow_est_new, inds)
+
+# classic single lap
+bench_single_lap = @benchmark flow_est_all = single_lap(img, imgw, fhs, window_size, 3)
+
+# speedup
+new_speed = median(bench_find_points.times) + median(bench_lap_points.times) + median(bench_fit_points.times)
+classic_speed = median(bench_single_lap.times)
+speedup = classic_speed/new_speed
+
+println("the speedup is: " speedup)
 
 
 
+showflow(flow_est_all)
+showflow(flow_est_points)
+
+showflow(flow)
 
 
 
-function my_imfilter!(result, image, kernel_factors, "symmetric", points)
-    for k in size(points, 2)
-        imfilter(points[:, k]
+imgshow(real(flow_est_new))
+imgshow(imag(flow_est_new))
 
+flow_points(points, flow)
+flow_points(points, flow_est_new)
 
+## add flow interpolation
+
+meshgrid(x, y) = [repeat(x, outer=length(y)) repeat(y, inner=length(x))]
+meshgrid(x::Real, y::Real) = [repeat(1:x, outer=y) repeat(1:y, inner=x)]
+
+function test_scatter(flow_size, points, samples; method=Polyharmonic(2))
+    gridPoints = meshgrid(flow_size...)'
+    itp = interpolate(method, points, samples);
+    interpolated = ScatteredInterpolation.evaluate(itp, gridPoints)
+    gridded = reshape(interpolated, flow_size)
+    return gridded
 end
+
+points[:, 1]
+points[:, 1]
+
+samples = [flow_est_new[points[:, k]...] for k in axes(points)[2]]
+
+# multi quad
+multiquad_flow_est = test_scatter(size(flow), points, samples, method=Multiquadratic(2))
+
+showflow(multiquad_flow_est)
+showflow(flow)
+showflow(flow_est_new)
+
+# thin plate
+thinplate_flow_est = test_scatter(size(flow), points, samples, method=Polyharmonic(2))
+
+showflow(thinplate_flow_est)
+showflow(flow_est_new)
+
+figure()
+PyPlot.scatter([x[2] for x in inds], [x[1] for x in inds], marker = :x); gcf()
+
+
+# check if it used the points unchanged
+flow_points(points, flow_est_new)
+flow_points(points, thinplate_flow_est) # yes
+flow_points(points, multiquad_flow_est) # yes
+
+
+
+## helper functions
+
+flow_points(points, flow) = [flow[points[:, k]...] for k in axes(points)[2]]
+
+showflow(flow)
+showflow(flow_est_new)
+showsparseflow(flow_est_new)
+
+
+poly_est, source_reg, figs = polyfilter_lap(img, imgw, display=true)
+
+showflow(poly_est, figtitle="classic poly")
+showflow(flow .- poly_est, mag=2)
+
+showflow((flow .- poly_est)[10:size(flow, 1)-10, 10:size(flow, 1)-10], mag=2)
+
+figs[1]
+
+poly_point_est, source_point_reg, figs_point = polyfilter_lap_at_points(img, imgw, display=true)
+
+poly_point_less_est, source_point_reg, figs_point, last_u = polyfilter_lap_at_points(img, imgw, display=true, point_count=20, spacing=40)
+
+showflow(poly_point_est, figtitle="points")
+showflow(flow, figtitle="original")
+
+showflow(flow .- poly_point_est, mag=1)
+showflow(flow .- poly_point_less_est, mag=2)
+
+
+#comapare speed:
+@btime poly_point_est, source_point_reg = polyfilter_lap_at_points(img, imgw, display=false)
+@btime poly_est, source_reg = polyfilter_lap(img, imgw, display=false)
+
+
+imgshow(imgw)
+imgshow(img)
+
+figs_point[5, 1]
+figs_point[5, 2]
+figs_point[7, 2]
+
+figs_point[7, 1]
+figs_point[7, 4]

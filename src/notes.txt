@@ -1,9 +1,9 @@
 TODO:
 
-- napsat zakladni how to run guide na vyzkouseni.
-
 - Start writing
   - napsat o single_lap
+
+#TODO: join showsparseflow and showflow
 
 - test how to run imfilter, what alg to use?
 
@@ -85,3 +85,7 @@ end
 
 
 supertype()
+
+r = rand(10000, 10000)
+@benchmark r[:,1] # -> fast
+@benchmark r[1,:] # -> slow

@@ -6,7 +6,7 @@ Depth = 3
 ```
 
 Here I will show how the basic methods work on different kinds of displacements.
-I use the word displacement and flow interchangeably. To see how to display the results check out the [Visualisation Functions](@ref) section.
+I use the word displacement and flow interchangeably.
 
 
 ## Generate test flows
@@ -83,8 +83,6 @@ lena = testimage("lena_gray")
 # so to use our algorithms later we need to convert them to floats.
 lena = Float32.(lena)
 
-# set the origin to lower left corner of the image
-lena = reverse(lena, dims=1)
 imgshow(lena, figtitle="Lena")
 ```
 
@@ -94,8 +92,6 @@ lena = testimage("lena_gray")
 
 # The Lena image from TestImages has elements of type ColorTypes.Gray{FixedPointNumbers.Normed{UInt8,8}} so we convert it to Float32.
 lena = Float32.(lena)
-
-lena = reverse(lena, dims=1)
 ```
 
 **Warped with `uni_flow`**

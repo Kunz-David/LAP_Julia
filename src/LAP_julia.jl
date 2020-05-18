@@ -3,24 +3,21 @@ module LAP_julia
 
 export
     # visualisation funcitons
-    showflow, imgshowflow, imgshow, warp_imgshowflow,
+    showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow,
     # useful helpers
     mean,
     # data generation
     gen_rand_flow, gen_chess,
     # Main LAP funcitons
     single_lap, polyfilter_lap,
+    polyfilter_lap_at_points, single_lap_at_points,
     # Types
     SimpleKeypoint, Image, Flow,
-    # Some useful LAP functions
-    find_keypoints_from_gradients,
+    # Point location
+    find_edge_points,
     # Interpolation
-    warp_img
+    warp_img, interpolate_flow
 
-struct SimpleKeypoint
-    pos::Tuple{T, T} where T <: Int
-    value::T where T <: Number
-end
 
 """
     Image{T} = Matrix{T} where T <: Real
@@ -35,9 +32,6 @@ const Image{T} = Matrix{T} where T <: Real
 Flow is a `Matrix` with elements that are `Complex`.
 """
 const Flow{T} = Matrix{Complex{T}} where T <: Real
-
-
-Base.show(io::IO, m::SimpleKeypoint) = print(io, m.pos, " ", m.value)
 
 
 include("helpers.jl")

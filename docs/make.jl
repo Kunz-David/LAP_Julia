@@ -7,8 +7,7 @@ makedocs(
     pages = ["index.md",
              "Usage" => Any[
                 "Examples" => Any[
-                   "man/examples/examples.md",
-                   "man/examples/single_lap.md"
+                   "man/examples/examples.md"
                    ]
                 ],
              "Library" => Any[

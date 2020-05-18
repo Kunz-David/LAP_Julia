@@ -1,6 +1,6 @@
 module visualise
 
-export showflow, imgshowflow, imgshow, warp_imgshowflow
+export showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow
 
 using PyPlot #: quiver, gcf, figure, imshow, subplots, title, xlabel, ylabel, gca
 import LAP_julia: interpolation.warp_img
@@ -22,7 +22,10 @@ rc("figure", titlesize=LARGE)   # fontsize of the figure title
 rc("figure", figsize=(6,6))
 rc("figure", dpi=400)
 rc("savefig", dpi=400)
+rc("image", origin="lower")
 # rcdefaults()
+
+#TODO: join showsparseflow and showflow
 
 
 """
@@ -50,7 +53,9 @@ function imgshow(img; fig=nothing, figtitle::String="Image", ret::Symbol=:figure
     img = Float64.(img)
 
     imshow(img, cmap = :gray);
-    ax.set_ylim(0, size(img)[1]);
+    # ax.set_ylim(0, size(img)[1]-1);
+    # ax.set_xlim(0, size(img)[2]-1);
+
     title(figtitle)
 
     if ret == :figure
@@ -106,11 +111,71 @@ function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, key:
     trimmed_imag = fill(NaN, size(uv_flow[:,:,2]))
     trimmed_imag[1:n:end, 1:n:end] .= uv_flow[1:n:end, 1:n:end, 2]
 
-    max = maximum(filter(!isnan, abs.([trimmed_imag trimmed_real])))
+    maxi = maximum(filter(!isnan, abs.([trimmed_imag trimmed_real])))
 
-    scaling = max/(n * mag)
+    scaling = maxi/(n * mag)
     color = atan.(trimmed_real, trimmed_imag)
     color = (color .- minimum(color)) ./ maximum(color)
+
+    if fig == nothing
+        fig, ax = subplots(dpi = 400)
+    else
+        fig = fig
+        ax = gca()
+    end
+
+    q = ax.quiver(X, Y, trimmed_real, trimmed_imag, atan.(trimmed_real, trimmed_imag),
+            scale_units = "xy", scale = scaling)
+
+    # angles='uv' sets the angle of vector by atan2(u,v), angles='xy' draws the vector from (x,y) to (x+u, y+v)
+    ax.set_aspect(1.)
+    xlabel("x - real\n\n")
+    ylabel("y - imag")
+    title(figtitle)
+
+    if key == true
+        # subplots_adjust(bottom=0.1)
+        label_text = "length = " * @sprintf("%0.2f", maxi)
+        ax.quiverkey(q, X=0.75, Y = 0.2, U = maxi, coordinates="inches",
+        label=label_text, labelpos = "E")
+    end
+
+    if ret == :figure
+        return gcf()
+    elseif ret == :pyobject
+        return q
+    end
+end
+
+function showsparseflow(flow::Flow; fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
+
+    # set defaults
+    min_threshold = 1e-10
+    vecs_in_one_dim = 20
+    skip_count = ceil(Int64, maximum(size(flow))/vecs_in_one_dim)-1
+    n = skip_count + 1
+
+    # prepare data
+    uv_flow = zeros(size(flow)..., 2)
+    uv_flow[:, :, 1] = real(flow)
+    uv_flow[:, :, 2] = imag(flow)
+
+    # The x coordinates of the arrow locations
+    X = [1:size(flow, 2);]
+
+    # The y coordinates of the arrow locations
+    Y = [1:size(flow, 1);]
+
+    cond = ((abs.(real(flow)) .> min_threshold) .| (abs.(imag(flow)) .> min_threshold))
+
+    trimmed_real = fill(NaN, size(uv_flow[:,:,1]))
+    trimmed_real[cond] .= uv_flow[:, :, 1][cond]
+    trimmed_imag = fill(NaN, size(uv_flow[:,:,2]))
+    trimmed_imag[cond] .= uv_flow[:, :, 2][cond]
+
+    maxi = maximum(filter(!isnan, abs.([trimmed_imag trimmed_real])))
+
+    scaling = maxi/(n * mag)
 
     if fig == nothing
         fig, ax = subplots(dpi = 400)
@@ -130,8 +195,8 @@ function showflow(flow::Flow; skip_count=nothing, fig=nothing, mag::Real=1, key:
 
     if key == true
         # subplots_adjust(bottom=0.1)
-        label_text = "length = " * @sprintf("%0.2f", max)
-        ax.quiverkey(q, X=0.35, Y = 0.2, U = max, coordinates="inches",
+        label_text = "length = " * @sprintf("%0.2f", maxi)
+        ax.quiverkey(q, X=0.35, Y = 0.2, U = maxi, coordinates="inches",
         label=label_text, labelpos = "E")
     end
 

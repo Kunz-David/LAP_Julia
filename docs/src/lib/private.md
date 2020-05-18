@@ -9,17 +9,7 @@ Documentation for `LAP_julia.jl`'s internal interface.
 
 ## Functions
 
-```@docs
-LAP_julia.gradient_points.gradient_magnitude
-LAP_julia.pad_images
-LAP_julia.rescale_intensities
-LAP_julia.clean_using_gaussain
-LAP_julia.mse
-LAP_julia.angle_rms
-LAP_julia.angle_mean
-LAP_julia.vec_len
-LAP_julia.mean
-LAP_julia.inpaint.inpaint_nans!
-LAP_julia.lap.multi_mat_div
-LAP_julia.lap.window_sum!
+```@autodocs
+Modules = [LAP_julia, LAP_julia.lap, LAP_julia.visualise, LAP_julia.inpaint, LAP_julia.gradient_points, LAP_julia.data_gen, LAP_julia.interpolation]
+Public = false
 ```
