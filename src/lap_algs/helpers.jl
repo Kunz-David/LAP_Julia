@@ -13,6 +13,7 @@ using ComputationalResources, Images
 #     end
 # end
 
+#FIXME: use window_size not fhs
 function filt_onebyone!(imgfilt, img, kernel, fhs, points)
     padded = padarray(img, Pad(:symmetric, fhs, fhs))
 
@@ -87,4 +88,20 @@ function window_sum_around_points!(filter_result, pixels, image_size, window_siz
     # filtering gets a sum of pixels of window size in each coord
     filt_onebyone!(reshape(filter_result, image_size...), reshape(pixels, image_size), ones_kernel, Int64((window_size[1]-1)/2), points)
     return nothing
+end
+
+function add_at_points(A, B, inds)
+    for ind in inds
+        if isnan(B[ind])
+            continue
+        end
+        @assert !isnan(A[ind])
+        println(B[ind], ind)
+        A[ind] = A[ind] + B[ind]
+    end
+    return A
+end
+
+function sum_at_points(A, inds)
+    return sum([A[ind] for ind in inds])
 end

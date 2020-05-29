@@ -25,6 +25,13 @@ using LAP_julia
 
 ## Stav práce
 
+### 29.5.2020
+- projektova zprava hotova
+- porovanani s metodami v Matlabu nedopadly dobre, moje Julia implementace je cca 5x pomalejsi
+  - TODO: profilovani metod, zjistit co se deje
+- TODO: dokumentace sparse metod
+
+
 ### Shrnuti stavu ke dni 18.5.2020
 
 #### Stav

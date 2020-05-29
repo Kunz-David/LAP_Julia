@@ -37,7 +37,7 @@ filter_size = filter_half_size * 2 + 1
 u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
 
 window_half_size = [1, 1]
-u_out = LAP_julia.helpers.clean_using_gaussain(u_est[3:end-2, 3:end-2], window_half_size)
+u_out = LAP_julia.helpers.smooth_with_gaussian(u_est[3:end-2, 3:end-2], window_half_size)
 
 LAP_julia.visualise.showflow(u_est[3:end-2, 3:end-2])
 
@@ -184,7 +184,7 @@ flow[1:ixhalf, iyhalf:iy] .= 20 .+ -20 .* im;
 flow[ixhalf:ix, 1:iyhalf] .= -20 .+ 20 .* im;
 flow[ixhalf:ix, iyhalf:iy] .= 20 .+ 20 .* im;
 
-flow = LAP_julia.helpers.clean_using_gaussain(flow, 60);
+flow = LAP_julia.helpers.smooth_with_gaussian(flow, 60);
 
 showflow(flow)
 

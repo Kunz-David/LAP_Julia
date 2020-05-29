@@ -3,11 +3,11 @@ module LAP_julia
 
 export
     # visualisation funcitons
-    showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow,
+    showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow, addpoints, imgoverlay,
     # useful helpers
     mean,
     # data generation
-    gen_rand_flow, gen_chess,
+    gen_rand_flow, gen_chess, gen_init,
     # Main LAP funcitons
     single_lap, polyfilter_lap,
     polyfilter_lap_at_points, single_lap_at_points,
@@ -48,30 +48,12 @@ using .lap
 using .visualise
 using .inpaint: inpaint_nans!
 using .gradient_points
-# using .visualise: showflow, imgshowflow, imgshow
-using .data_gen
 using .interpolation
+using .data_gen
+
 
 
 loaded() = println("LAP_julia succesfully loaded!")
-
-# some macros:
-# using BenchmarkTools
-# macro debugtime(body, note)
-#     quote
-#         println($note)
-#         @btime $body
-#     end
-# end
-# # @debugtime(1+1, "1 + 1")
-#
-# macro debugassert(body, note)
-#     quote
-#         println($note)
-#         @assert $body
-#     end
-# end
-# # @debugassert (1+1 == 1) "math works"
 
 loaded()
 

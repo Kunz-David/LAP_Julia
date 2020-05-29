@@ -26,16 +26,16 @@ end
 """
     find_edge_points(img::Image; spacing::Int=10, number::Int=100, sigma=1, mask::BitArray{2}=[])
 
-Greadily locates `number` of points in `img` with the highest gradient magnitude. These points have will be atleast `spacing`
+Greadily locate `number` of points in `img` with the highest gradient magnitude. These points have will be atleast `spacing`
 pixels appart, they are returned as an array of `CartesianIndex`. A `mask` can be used to exclude some parts of `img` from the search.
 
 Note: `sigma` is the gaussian filter used to smooth `img` before looking for gradients.
 """
 function find_edge_points(img::Image;
-                          spacing::Int=10,
-                          number::Int=100,
+                          spacing::Int=40,
+                          number::Int=35,
                           sigma=1,
-                          mask::BitArray{2}=Bool[])
+                          mask::BitArray{2}=BitArray{2}(undef, 0,0))
 
     # calculate gradient mag
     grad, mag = gradient_magnitude(ImageFiltering.imfilter(img, ImageFiltering.Kernel.gaussian(sigma)))
@@ -45,7 +45,7 @@ function find_edge_points(img::Image;
     #const
     marker = zero(eltype(mag)) # marker for masked gradients we don't want keypoints at the points of 0 gradient
     # marker = 0.25
-    if mask != []
+    if !isempty(mask)
         @assert( size(mag) == size(mask))
         for i = 1:length(mag)
             if mask[i] == 0

@@ -20,26 +20,20 @@ imgw = LAP_julia.interpolation.warp_img(img, -real(flow), -imag(flow));
 #lap
 filter_num = 3;
 filter_half_size = 10;
+fhs = filter_half_size
 window_size = [21, 21];
 #points
-point_count = 100;
-spacing = 10;
+point_count = 30;
+spacing = fhs*2
 
-mask = padarray(ones(size(img).-(2*fhs, 2*fhs)), Fill(0, (fhs, fhs), (fhs, fhs)))
+mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
 # get points
-points, mag, mag_points = find_keypoints_from_gradients(img, sigma = 1, number = point_count, spacing = spacing, mask = mask);
+inds = find_edge_points(img, sigma = 1, number = point_count, spacing = spacing, mask = mask);
 
-using PyPlot
-# see points
-pos_x = [point.pos[1] for point in points]
-pos_y = [point.pos[2] for point in points]
-
-pos = transpose([pos_x pos_y])
-
-points = pos
+points = LAP_julia.inds_to_points(inds)
 
 imgshow(img)
-PyPlot.scatter(pos_y, pos_x, marker = :x)
+addpoints(inds)
 gcf()
 
 
@@ -59,49 +53,19 @@ showflow(u_est)
 ## profile it:
 
 
-
-
-##
-
-# define inds
-inds = (50:50, 50:50)
-inds = (1:1, 50:50)
-
-imgfilt = similar(img)
-
 # make kernel
 sigma = 3
 filter_size = 21
 filter_half_size = Int64((filter_size-1)/2)
+#black kernel
+oned = ImageFiltering.centered(ones(filter_size) .* 12123123)
+kernel = kernelfactors((oned, oned))
+
+#gaus kernel
 gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
 kernel = kernelfactors((gaus, gaus))
 
 # try the inds imfilter original
-padded = padarray(img, Pad(:symmetric, filter_half_size, filter_half_size))
-
-imgshow(padded)
-
-imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), inds)
-
-for ind in CartesianIndices(img)
-    ind_filt = (ind[1]:ind[1], ind[2]:ind[2])
-    # println(ind_filt)
-    imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), ind_filt)
-end
-
-imgshow(imgfilt)
-
-imgfilt2 = similar(img)
-
-imfilter!(imgfilt2, img, kernel, "symmetric")
-
-imgshow(imgfilt2)
-
-imgfilt == imgfilt2
-
-
-result = Array{Float32}(undef, size(points, 2))
-
 function filt_onebyone!(imgfilt, img, kernel, fhs, points)
     padded = padarray(img, Pad(:symmetric, fhs, fhs))
 
@@ -113,10 +77,16 @@ end
 
 imgfilt = copy(img)
 imgfilt = similar(img)
-imgfilt2 = similar(img)
+imgfilt2 = copy(img)
 
-filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
-imfilter!(imgfilt2, img, kernel, "symmetric")
+LAP_julia.lap.
+@benchmark LAP_julia.lap.filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
+
+@benchmark imfilter!(imgfilt2, img, kernel, "symmetric")
+
+
+LAP_julia.mean(imgfilt)
+LAP_julia.mean(imgfilt)
 
 imgshow(imgfilt)
 imgshow(imgfilt2)
@@ -186,7 +156,7 @@ Juno.@enter imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad
 
 ##
 using LAP_julia
-include("useful.jl")
+# include("useful.jl")
 
 img = testimage("lena_gray")
 img = Float32.(img)
@@ -223,9 +193,14 @@ PyPlot.scatter(pos_y, pos_x, marker = :x); gcf()
 # run methods
 flow_est_all = single_lap(img, imgw, fhs, window_size, 3)
 # flow_est_points = single_lap(img, imgw, fhs, window_size, 3, points)
-flow_est_new, all_coeffs = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+flow_est_new = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+
+showflow(flow_est_new, disp_type=:sparse)
+showflow(flow)
+showflow(flow_est_new, disp_type=:sparse)
 
 completed_flow = interpolate_flow(flow_est_new, inds)
+sum(isnan.(completed_flow))
 
 # compare resulting estimations:
 # show calculated flows
@@ -329,11 +304,10 @@ showsparseflow(flow_est_new)
 poly_est, source_reg, figs = polyfilter_lap(img, imgw, display=true)
 
 showflow(poly_est, figtitle="classic poly")
-showflow(flow .- poly_est, mag=2)
+showflow(flow .- poly_est, mag=1, figtitle="difference: classic poly - orig")
 
 showflow((flow .- poly_est)[10:size(flow, 1)-10, 10:size(flow, 1)-10], mag=2)
 
-figs[1]
 
 poly_point_est, source_point_reg, figs_point = polyfilter_lap_at_points(img, imgw, display=true)
 
@@ -359,4 +333,28 @@ figs_point[5, 2]
 figs_point[7, 2]
 
 figs_point[7, 1]
-figs_point[7, 4]
+figs_point[1, 5]
+
+
+## tmp hacks
+
+function add_at_points(A, vals, inds)
+    for (ind, val) in zip(inds, vals)
+        A[ind] = A[ind] + val
+    end
+    return A
+end
+
+function add_from_matrix_at_points(A, vals, inds)
+    return [val + A[ind] for (val, ind) in zip(vals, inds)]
+end
+
+
+A = zeros(12,12)
+
+vals = [12, 12]
+inds = [CartesianIndex(2, 3), CartesianIndex(4, 5)]
+
+A = add_at_points(A, vals, inds)
+
+newvals = add_from_matrix_at_points(A, vals, inds)

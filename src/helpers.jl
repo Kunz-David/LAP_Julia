@@ -13,6 +13,11 @@ function pad_images(image1::Image, image2::Image)
     (a, b) = size(image1)
     (c, d) = size(image2)
 
+    # if there is nothing to do, end
+    if (a, b) == (c, d)
+        return image1, image2
+    end
+
     if (a < c)
         image1 = [image1; zeros(c - a, b)];
         a = c
@@ -47,21 +52,21 @@ function rescale_intensities(image1::Image, image2::Image)
 end
 
 """
-    clean_using_gaussain(u::Matrix{<:Number}, window_half_size_one_dim::Integer)
+    smooth_with_gaussian(u::Matrix{<:Number}, window_half_size_one_dim::Integer)
 
 Clean the Matrix `u` by smoothing using a square 2D Gaussian filter of size `2 * window_half_size_one_dim + 1` in each dimension.
 """
-@inline function clean_using_gaussain(u::Matrix{<:Number}, window_half_size_one_dim::Integer)# where T<:Integer
+@inline function smooth_with_gaussian(u::Matrix{<:Number}, window_half_size_one_dim::Integer)# where T<:Integer
     window_half_size = [window_half_size_one_dim, window_half_size_one_dim]
-    return clean_using_gaussain(u, window_half_size)
+    return smooth_with_gaussian(u, window_half_size)
 end
 
 """
-    clean_using_gaussain(u::Matrix{<:Number}, window_half_size)
+    smooth_with_gaussian(u::Matrix{<:Number}, window_half_size)
 
 Clean the Matrix `u` by smoothing using a 2D Gaussian filter of size `2 * window_half_size + 1`.
 """
-function clean_using_gaussain(u::Matrix{<:Number}, window_half_size)
+function smooth_with_gaussian(u::Matrix{<:Number}, window_half_size)
 
     σ_1 = 2 * window_half_size[1]
     σ_2 = 2 * window_half_size[2]
@@ -135,6 +140,13 @@ function inds_to_points(inds::Array{CartesianIndex, 1})
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
     return transpose([pos_x pos_y])
+end
+
+
+function max_displacement(flow)
+    magnitudes = map(x -> LAP_julia.vec_len(x), flow)
+    max_mag = maximum(filter(!isnan, magnitudes))
+    return max_mag
 end
 
 

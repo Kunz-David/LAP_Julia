@@ -1,7 +1,8 @@
 module data_gen
 
-export gen_rand_flow, gen_chess
+export gen_rand_flow, gen_chess, gen_init
 
+using TestImages
 using LAP_julia
 
 
@@ -48,7 +49,7 @@ function gen_rand_flow(flow_size::Tuple{T, T}=(200, 200), max_magnitude::Real=20
     rand_flow = uv_flow[1:flow_size[1], 1:flow_size[2], 1] .+ (im * uv_flow[1:flow_size[1], 1:flow_size[2], 2]);
 
     # blur to make it continuous
-    rand_flow = LAP_julia.clean_using_gaussain(rand_flow, [filter_amp, filter_amp])
+    rand_flow = LAP_julia.smooth_with_gaussian(rand_flow, [filter_amp, filter_amp])
 
     return rand_flow
 end
@@ -67,6 +68,25 @@ function gen_chess(tile_size::Integer=50, board_size::Integer=4)
 
     chessboard = repeat(mini_board, outer=(convert(Integer, (board_size/2)), convert(Integer, (board_size/2))))
     return chessboard
+end
+
+"""
+    gen_init(type::Symbol=:lena; flow_args=[])
+
+Create the usual testing data; img, imgw, flow
+"""
+function gen_init(type::Symbol=:lena; flow_args=[])
+    if type == :lena
+        img = testimage("lena_gray")
+        img = Float64.(img)
+    elseif type == :chess
+        img = gen_chess(50,4)
+    end
+
+    flow = gen_rand_flow(size(img), flow_args...)
+    imgw = warp_img(img, -real(flow), -imag(flow))
+
+    return img, imgw, flow
 end
 
 end # module

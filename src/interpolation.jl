@@ -57,9 +57,11 @@ See also: [`showflow`](@ref), [`Flow`](@ref)
 function interpolate_flow(flow::Flow, inds::Array{CartesianIndex, 1}, method::T=Multiquadratic(2)) where {T <: ScatteredInterpolation.RadialBasisFunction}
     # get samples of flow at points
     samples = [flow[ind] for ind in inds]
+    non_nan = filter(x -> !isnan(samples[x]), 1:length(samples))
+    @assert length(non_nan) != 0
 
     # interpolate
-    itp = ScatteredInterpolation.interpolate(method, LAP_julia.inds_to_points(inds), samples);
+    itp = ScatteredInterpolation.interpolate(method, LAP_julia.inds_to_points(inds[non_nan]), samples[non_nan]);
     gridPoints = meshgrid(size(flow)...)'
     interpolated = ScatteredInterpolation.evaluate(itp, gridPoints)
 

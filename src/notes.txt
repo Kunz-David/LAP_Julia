@@ -1,11 +1,11 @@
 TODO:
 
 - Start writing
-  - napsat o single_lap
 
-#TODO: join showsparseflow and showflow
+- test to see when to use filt_onebyone and when classic imfilter
 
 - test how to run imfilter, what alg to use?
+- check whether window_sum_around_points calculates only around points and not on whole window.
 
 
 - make a smooth displacement field funciton in julia

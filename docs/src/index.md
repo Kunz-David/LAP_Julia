@@ -38,12 +38,3 @@ Depth = 1
 ```@contents
 Pages = ["lib/public.md", "lib/private.md"]
 ```
-
-<!-- ```@example
-using LAP_julia
-flow = gen_rand_flow()
-showflow(flow)
-``` -->
-
-```@contents
-```
