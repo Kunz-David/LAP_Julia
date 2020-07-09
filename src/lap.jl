@@ -1,5 +1,7 @@
 module lap
 
+using TimerOutputs
+
 export polyfilter_lap, single_lap,
        polyfilter_lap_at_points, single_lap_at_points
 

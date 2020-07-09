@@ -45,11 +45,11 @@ LAP_julia.visualise.showflow(u_out)
 
 ### test gen rand flow
 for k in 1:2
-    out = gen_rand_flow((100,100),10)
+    out = gen_tiled_flow((100,100),10)
     showflow(out, 1)
 end
 
-out = gen_rand_flow((100,100),10)
+out = gen_tiled_flow((100,100),10)
 showflow(out)
 # --->works
 
@@ -96,7 +96,7 @@ imgw = imWarp(img, dx, dy);
 imgw
 
 #test2:
-flow = gen_rand_flow(size(img), 50);
+flow = gen_tiled_flow(size(img), 50);
 dx, dy = real(flow), imag(flow);
 imgw = imWarp(img, dx, dy);
 imgw
@@ -108,7 +108,7 @@ grid = ones(512, 512);
 @views grid[:, 1:n:end] .= 0;
 fig = PyPlot.figure(dpi = 400, figsize = (5, 5))
 PyPlot.imshow(grid, cmap = :gray); gcf()
-flow = gen_rand_flow(size(grid), 50);
+flow = gen_tiled_flow(size(grid), 50);
 dx, dy = real(flow), imag(flow);
 imgw = imWarp(grid, dx, dy);
 

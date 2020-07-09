@@ -11,7 +11,7 @@ mgrid = ones(512, 512);
 img = mgrid
 
 # genrate flow
-flow = gen_rand_flow(size(img), 50);
+flow = gen_tiled_flow(size(img), 50);
 
 # generate warpped image
 imgw = LAP_julia.interpolation.imWarp(img, real(flow), imag(flow))
@@ -25,7 +25,7 @@ imgr = reverse(img, dims=1)
 img = imgr
 
 # genrate flow
-flow = gen_rand_flow(size(img), 30);
+flow = gen_tiled_flow(size(img), 30);
 showflow(flow)
 
 # generate warpped image
@@ -48,7 +48,7 @@ img = chessboard
 img = gen_chess()
 
 # genrate flow
-flow = gen_rand_flow(size(img), 20, 1000);
+flow = gen_tiled_flow(size(img), 20, 1000);
 
 # generate warpped image
 imgw = LAP_julia.interpolation.warp_img(img, real(flow), imag(flow))

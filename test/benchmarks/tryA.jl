@@ -1,7 +1,7 @@
 
 
 point_count = 50
-flow = gen_rand_flow((200, 200), 30, 40)
+flow = gen_tiled_flow((200, 200), 30, 40)
 inds = gen_rand_points(flow, point_count, "Semigridded")
 
 
@@ -102,7 +102,7 @@ push!(df, Dict(:Index => index
                ,:Median_speed => median(bench).time
                ,:Magnitude_of_MSE => vec_len(mse(method_flow, flow))
                ,:Angle_RMS => angle_rms(method_flow, flow)
-               ,:Angle_mean => angle_mean(method_flow, flow)
+               ,:Angle_mean => angle_mean_error(method_flow, flow)
                ,:Benchmark => bench
                ,:Truth_flow => showflow(flow, figtitle="Truth flow", ret="PyObject")
                ,:Method_flow => showflow(method_flow, figtitle=(method * " flow"), ret="PyObject")
@@ -135,13 +135,13 @@ Point_counts = [9,
                 81,
                 100,
                 144]
-import LAP_julia: helpers.mse, helpers.vec_len, helpers.angle_rms, helpers.angle_mean
+import LAP_julia: helpers.mse, helpers.vec_len, helpers.angle_rms, helpers.angle_mean_error
 
 let
     index = 0
 
     for test in test_count
-        flow = gen_rand_flow(flow_size, 30, 40)
+        flow = gen_tiled_flow(flow_size, 30, 40)
         for point_count in Point_counts
             for point_mode in Modes
                 inds = gen_rand_points(flow, point_count, point_mode)
@@ -182,7 +182,7 @@ let
                                    :Median_speed => median(bench).time,
                                    :Magnitude_of_MSE => vec_len(mse(method_flow, flow)),
                                    :Angle_RMS => angle_rms(method_flow, flow),
-                                   :Angle_mean => angle_mean(method_flow, flow),
+                                   :Angle_mean => angle_mean_error(method_flow, flow),
                                    :Benchmark => bench,
                                    :Truth_flow => showflow(flow, figtitle="Truth flow", ret="PyObject"),
                                    :Method_flow => showflow(method_flow, figtitle=(method * " flow"), ret="PyObject"),

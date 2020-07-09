@@ -15,6 +15,12 @@ TODO:
 
 - test how the size of the filter affects the quality of a single_lap run
 
+- can be further sped up like this, if time is left
+      A = rand(2, 2, 65536);
+      @benchmark A[k, l, :] .= rand(65536)
+
+      A = rand(65536, 2, 2);
+      @benchmark A[:, k, l] .= rand(65536)
 
 How to debug:
 - Juno.@enter

@@ -17,6 +17,44 @@ showflow(flow, figtitle="Displacement field")
 savefig("../plots/intro_lena_flow.png")
 
 
+## lena reg intro with red rectangle
+using PyCall
+@pyimport matplotlib.patches as patches
+
+function add_rect(ax)
+    rect = patches.Rectangle((100,110),30,30,linewidth=1,edgecolor="r",facecolor="none")
+    ax.add_patch(rect)
+    return gcf()
+end
+
+img, imgw, flow = gen_init()
+
+imgshow(img, figtitle="Target")
+add_rect(gca())
+savefig("../plots/rect_intro_lena_orig.png")
+
+imgshow(imgw, figtitle="Source")
+add_rect(gca())
+savefig("../plots/rect_intro_lena_warped.png")
+
+imgoverlay(img, imgw, figtitle="Blending of Target and Source")
+add_rect(gca())
+savefig("../plots/rect_intro_lena_bl_or_movement.png")
+
+showflow(flow, figtitle="Displacement Field")
+add_rect(gca())
+savefig("../plots/rect_intro_lena_flow.png")
+
+# rect disp
+flow[100:130, 110:140]
+showflow(flow[100:130, 110:140], figtitle="Displacement Field of Rectagle")
+rect = patches.Rectangle((1,1),30,30,linewidth=1,edgecolor="r",facecolor="none")
+ax = gca()
+ax.add_patch(rect)
+gcf()
+savefig("../plots/rect_intro_lena_flow_zoom.png")
+
+
 ## lap const displacement
 img, imgw, flow = gen_init(:lena, flow_args=[20, 300])
 
@@ -151,3 +189,28 @@ vec, edge = LAP_julia.gradient_points.gradient_magnitude(img)
 
 imgshow(edge, figtitle="Edge Image")
 savefig("../plots/sparse_lap_edge_image.png")
+
+## sparse lap
+
+img, imgw, flow = gen_init(:lena, flow_args=[10, 150])
+showflow(flow, figtitle="Ground Truth Displacement")
+savefig("../plots/sparse_lap_ground_truth_flow.png")
+
+fhs = 15
+window_size = [31, 31]
+
+mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
+inds = find_edge_points(img, mask=mask)
+points = LAP_julia.inds_to_points(inds)
+new_estim = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+showflow(new_estim, disp_type=:sparse, figtitle="Estimated Displacement Vectors")
+savefig("../plots/sparse_lap_estimate_image.png")
+
+full_new_estim = interpolate_flow(new_estim, inds)
+showflow(full_new_estim, figtitle="Interpolated Displacement Vectors")
+savefig("../plots/sparse_lap_estimate_interpolated_image.png")
+
+
+imgshow(edge, figtitle="Edge Image with Points")
+PyPlot.scatter([ind[2] for ind in inds], [ind[1] for ind in inds], marker = :x); gcf()
+savefig("../plots/sparse_lap_edge_image_with_points.png")

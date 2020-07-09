@@ -25,11 +25,60 @@ using LAP_julia
 
 ## Stav práce
 
+### 9.7.2020
+- Julia implementace PF-LAP a LAP metod je ted o neco rychlejsi nez implementace v Matlabu
+  - PF-LAP Matlab implementace cca 1.5s na obrazky 256x256, Julia cca 1s
+  - LAP Matlab implementace cca 0.1s na obrazky 256x256, Julia cca 0.09s
+  - __TODO: zrychleni sparse metod__
+
+__Speedtest:__
+```
+────────────────────────────────────────────────────────────────────────────────────────
+                                                Time                   Allocations      
+                                        ──────────────────────   ───────────────────────
+           Tot / % measured:                 1.05s / 100%             549MiB / 100%     
+
+Section                         ncalls     time   %tot     avg     alloc   %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+polyfilter lap                       1    1.04s   100%   1.04s    549MiB  100%    549MiB
+  single filter pyramid level        7    1.04s   100%   149ms    545MiB  99.4%  77.9MiB
+    single lap                       7    642ms  61.5%  91.7ms    332MiB  60.5%  47.4MiB
+      filtering                      7    293ms  28.0%  41.8ms   35.9MiB  6.54%  5.12MiB
+      prepare A and b                7    139ms  13.3%  19.8ms   75.4MiB  13.7%  10.8MiB
+        window sum 1                21   82.6ms  7.91%  3.93ms   39.0MiB  7.10%  1.85MiB
+        window sum 2                14   26.7ms  2.56%  1.91ms   26.0MiB  4.73%  1.85MiB
+      multli mat div                 7   78.0ms  7.47%  11.1ms   84.0MiB  15.3%  12.0MiB
+      calculate flow                 7   61.4ms  5.88%  8.77ms   49.0MiB  8.94%  7.01MiB
+    inpainting                       7    202ms  19.4%  28.9ms    135MiB  24.6%  19.3MiB
+    smoothing                        7    122ms  11.7%  17.5ms   32.7MiB  5.97%  4.68MiB
+    image interpolation              7   69.6ms  6.67%  9.94ms   38.5MiB  7.02%  5.50MiB
+  setup                              1   2.91ms  0.28%  2.91ms   3.50MiB  0.64%  3.50MiB
+────────────────────────────────────────────────────────────────────────────────────────
+```
+- Pridana moznost casovat registracni metody.
+_Priklad:_
+```
+using TimerOutputs, LAP_julia
+
+TimerOutputs.enable_debug_timings(LAP_julia.lap)
+timer = TimerOutput("Registration");
+@timeit timer "polyfilter lap" begin
+    flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
+end
+print_timer(timer)
+```
+- Novy zpusob generovani pixeloveho posunu.
+  - pripraveno na testovani fitovani na kvadraticky polynom
+  - funkce `gen_quad_flow`
+- TODO: kvadraticka interpolace posunu (fitovani).
+
+
 ### 29.5.2020
 - projektova zprava hotova
 - porovanani s metodami v Matlabu nedopadly dobre, moje Julia implementace je cca 5x pomalejsi
   - TODO: profilovani metod, zjistit co se deje
 - TODO: dokumentace sparse metod
+- pridat doklikatelne Jupyter experimenty.
 
 
 ### Shrnuti stavu ke dni 18.5.2020
@@ -37,7 +86,7 @@ using LAP_julia
 #### Stav
 - Jak testuju funkcnost meho kodu:
   - Vytvoreni testovanych obrazku; original a deformovany obrazek
-    - Generovani nahodne hladke deformace pro testovani je implementovano v `gen_rand_flow`
+    - Generovani nahodne hladke deformace pro testovani je implementovano v `gen_tiled_flow`
       - tady bych chtel pridat jeste jiny zpusob vytvoreni deformace, protoze deformace vypada hezky :) (viz dokumentace), ale nevim jak vypada deformace opravdovych obrazku. Napriklad [tady](https://www.researchgate.net/publication/316876842_Iterative_fitting_after_elastic_registration_An_efficient_strategy_for_accurate_estimation_of_parametric_deformations) je defomace jednodussi a myslim, ze by nase metoda mohla fungovat na jednodussi a pomalejsi deformace fungovat lepe. Chtel bych na to pouzit [tuto](https://evizero.github.io/Augmentor.jl/) julia knihovnu.
     - Deformovany obrazek ziskam z originalu za pouziti funkce `warp_img`, ta interpoluje linearne. (Myslim, ze se nevyplati interpolovat jinak, protoze presnost se tolik nezmeni, ale rychlost je znatelne mensi. ??)
 
@@ -65,14 +114,13 @@ using LAP_julia
 #### Plan praci
 1) Dodelat `polyfilter_lap_at_points` aby fungovala presnejsi
 2) Psat psat psat (potrebuji mit 10 normostran do 29.5.2020) -> formou na semestralni projekt
-    1) co je registrace, na co je a porovnani s tim co se dela ted ve svete
-    2) z jakych metod vychazim a jak se je snazim zrychlit/zlepsit
-    3) jak to probihalo, co jsem pouzil, co jsem zkusil...
-    4) jake jsou moje vysledky
+  a) co je registrace, na co je a porovnani s tim co se dela ted ve svete
+  b) z jakych metod vychazim a jak se je snazim zrychlit/zlepsit
+  c) jak to probihalo, co jsem pouzil, co jsem zkusil...
+  d) jake jsou moje vysledky
 3) male prace -> dokumentace?
 4) ...
 
-----------
 
 Kod pro vyzkouseni `single_lap_at_points`
 ```julia
@@ -82,7 +130,7 @@ include("useful.jl")
 img = testimage("lena_gray")
 img = Float32.(img)
 
-flow = gen_rand_flow(size(img), 15, 100)
+flow = gen_tiled_flow(size(img), 15, 100)
 showflow(flow)
 
 # generate warpped image

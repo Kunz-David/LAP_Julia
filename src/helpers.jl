@@ -105,11 +105,11 @@ function angle_rms(x, y)
     return sqrt(mse(rad2deg.(angle.(x)), rad2deg.(angle.(y))))
 end
 """
-    function angle_mean(x, y)
+    function angle_mean_error(x, y)
 
 Calculate the mean error in angle between `x` and `y`. Output in degrees.
 """
-function angle_mean(x, y)
+function angle_mean_error(x, y)
     return mean(abs.(rad2deg.(angle.(x)) - rad2deg.(angle.(y))))
 end
 
@@ -147,6 +147,20 @@ function max_displacement(flow)
     magnitudes = map(x -> LAP_julia.vec_len(x), flow)
     max_mag = maximum(filter(!isnan, magnitudes))
     return max_mag
+end
+
+"""
+    classic_alg(img, imgw, fhs, window_size)
+
+Perform the `single_lap` algorithm with post-proccessing (inpainting and smoothing).
+
+See also: [`single_lap`](@ref), [`inpaint_nans!`](@ref), [`smooth_with_gaussian`](@ref)
+"""
+function classic_alg(img, imgw, fhs, window_size)
+    classic_estim = single_lap(img, imgw, fhs, window_size)
+    LAP_julia.inpaint_nans!(classic_estim)
+    LAP_julia.smooth_with_gaussian(classic_estim, window_size)
+    return classic_estim
 end
 
 

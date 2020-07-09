@@ -16,7 +16,7 @@ using Dierckx
 point_count = 100
 
 
-flow = gen_rand_flow(size(img), 30, 40)
+flow = gen_tiled_flow(size(img), 30, 40)
 
 
 rand_inds = rand(CartesianIndices(flow), point_count)
@@ -78,12 +78,12 @@ showflow(gridded_scatter, figtitle="scatter")
 
 showflow(flow, figtitle="orig")
 
-import LAP_julia: helpers.mse, helpers.angle_rms, helpers.angle_mean, helpers.vec_len
+import LAP_julia: helpers.mse, helpers.angle_rms, helpers.angle_mean_error, helpers.vec_len
 
 mse(gridded_scatter, flow)
 vec_len(mse(gridded_scatter, flow))
 angle_rms(gridded_scatter, flow)
-angle_mean(gridded_scatter, flow)
+angle_mean_error(gridded_scatter, flow)
 
 
 sum(flow - gridded_scatter)/length(flow)
@@ -197,7 +197,7 @@ z2 = [imag(point) for point in z]
 ### compare results
 
 # prepare data:
-flow = gen_rand_flow(size(img), 30, 60)
+flow = gen_tiled_flow(size(img), 30, 60)
 
 # set params:
 point_count = 10
@@ -403,7 +403,7 @@ end
 
 g2(12, 12)
 
-fl = gen_rand_flow((12,12), 12)
+fl = gen_tiled_flow((12,12), 12)
 
 typeof(fl)
 
@@ -438,7 +438,7 @@ typeof(flow)
 
 df = DataFrame()
 
-flow = gen_rand_flow((100,100), 12)
+flow = gen_tiled_flow((100,100), 12)
 plot = showflow(flow)
 
 @save "save_df.JLD2" df flow

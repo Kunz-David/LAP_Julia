@@ -87,7 +87,7 @@ using LAP_julia
 img = gen_chess()
 
 # genrate flow
-flow = gen_rand_flow(size(img), 20, 1000);
+flow = gen_tiled_flow(size(img), 20, 1000);
 
 showflow(flow)
 
@@ -206,7 +206,7 @@ imgshow(mapped_img)
 
 ###
 
-flow = gen_rand_flow(size(img), 30, 1000)
+flow = gen_tiled_flow(size(img), 30, 1000)
 
 
 

@@ -6,6 +6,7 @@ using PyPlot: Figure
 using PyPlot
 using BenchmarkTools
 
+#TODO: add see section about timing in the docs to the api
 """
     polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
 
@@ -17,6 +18,7 @@ Find a transformation flow (complex displacment field), that transforms image `s
 - `filter_num::Integer=3`: the number of basis filters used in `single_lap` calls (so far only =3 implemented).
 - `max_repeats::Integer=1`: the maximum number of times an iteration of one filter size can be repeated.
 - `display::Bool=true`: use verbose prints and return an array of figures.
+- `timer::TimerOutput=TimerOutput("polyfilter_lap")`: Timer to time parts of the function.
 
 # Outputs
 - `flow::Flow`: is the complex vector field that transforms `source` closer to `target`.
@@ -32,94 +34,111 @@ the `target` image and then using this warped closer image as the source image i
 
 See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_imgshowflow`](@ref), [`Flow`](@ref)
 """
-function polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
+function polyfilter_lap(target::Image,
+                        source::Image;
+                        filter_num::Integer=3,
+                        max_repeats::Integer=1,
+                        display::Bool=true,
+                        timer::TimerOutput=TimerOutput("polyfilter_lap"))
 
-    # convert images to floats
-    source = Float32.(source)
-    target = Float32.(target)
+    @timeit_debug timer "setup" begin
+        # convert images to floats
+        source = Float32.(source)
+        target = Float32.(target)
 
-    # rescale images to have the whole [0, 1] spectrum.
-    target, source = LAP_julia.rescale_intensities(target, source)
-    #NOTE: a histogram match might be a good idea (https://juliaimages.org/stable/function_reference/#Images.histmatch)
+        # rescale images to have the whole [0, 1] spectrum.
+        target, source = LAP_julia.rescale_intensities(target, source)
+        #NOTE: a histogram match might be a good idea (https://juliaimages.org/stable/function_reference/#Images.histmatch)
 
-    # pad with zeros if sizes difer.
-    target, source = LAP_julia.pad_images(target, source)
+        # pad with zeros if sizes difer.
+        target, source = LAP_julia.pad_images(target, source)
 
-    image_size = size(target)
+        image_size = size(target)
 
-    # set number of layers in the filter pyramid.
-    level_count = floor(Int64, log2(minimum(size(target))/8)+1)+1
+        # set number of layers in the filter pyramid.
+        level_count = floor(Int64, log2(minimum(size(target))/8)+1)+1
 
-    @assert ((2^(level_count)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
+        @assert ((2^(level_count)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
 
-    # displacement init.
-    u_est = zeros(size(target))
+        # displacement init.
+        u_est = zeros(size(target))
 
-    # filter half sizes array eg. [16, 8, 4, 2, 1]
-    half_size_pyramid::Array{Int64,1} = 2 .^ range(level_count-1, stop=0, length=level_count)
+        # filter half sizes array eg. [16, 8, 4, 2, 1]
+        half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count))
 
-    # at what filter size change the interpolation strategy
-    interpol_change_index = findfirst(x -> x == 2, half_size_pyramid)
+        # at what filter size change the interpolation strategy
+        interpol_change_index = findfirst(x -> x == 2, half_size_pyramid)
 
-    if display
-        num_plots = 4
-        figs = Array{Figure}(undef, level_count, max_repeats*num_plots)
+        if display
+            num_plots = 4
+            figs = Array{Figure}(undef, level_count, max_repeats*num_plots)
+        end
+
+        source_reg = source
     end
-
-    source_reg = source
 
     for level in 1:level_count
 
-        if display
-            println("###################")
-            println("ITERATION: ", level)
-            println("filter_half_size: ", half_size_pyramid[level])
-        end
-
-        filter_half_size = half_size_pyramid[level]::Int
-        window_size::Tuple{Int64, Int64} = 2 .* filter_half_size .* (1, 1) .+ 1
-        window_half_size::Tuple{Int64, Int64} = (window_size .- 1) ./ 2
-
-        for iter_repeat in 1:max_repeats
-
-            Δ_u = single_lap(target, source_reg, filter_half_size, window_size, filter_num)
-
-            # USE INPAINTING TO CORRECT U_EST:
-            # 1) replicate borders
-            middle_vals = Δ_u[window_half_size[1]+1:end-window_half_size[1],
-                              window_half_size[2]+1:end-window_half_size[2]]
-            Δ_u = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
-            # 2) inpaint middle missing values
-            if all(isnan.(real(Δ_u))) # if all are NaNs
-                Δ_u = zeros(image_size)
-            elseif any(isnan.(Δ_u)) # if some are NaNs
-                LAP_julia.inpaint.inpaint_nans!(Δ_u)
+        @timeit_debug timer "single filter pyramid level" begin
+            if display
+                println("###################")
+                println("ITERATION: ", level)
+                println("filter_half_size: ", half_size_pyramid[level])
             end
-            # SMOOTH U_EST WITH A GAUSSIAN FILTER:
-            Δ_u = LAP_julia.smooth_with_gaussian(Δ_u, window_half_size)
 
-            # add the Δ_u to my u_est
-            u_est = u_est + Δ_u
+            filter_half_size = half_size_pyramid[level]::Int
+            window_size = UInt8.(2 .* filter_half_size .* (1, 1) .+ 1)
+            window_half_size = Int64.((window_size .- 1) ./ 2)
 
-            # depending on the size of the filter used, warp the source image closer to target using u_est
-            if level < interpol_change_index
-                # linear interpolation
-                source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
-            else
-                # more accurate slower interpolation TODO
-                source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
+            for iter_repeat in 1:max_repeats
+                @timeit_debug timer "single lap" begin
+                    Δ_u = single_lap(target, source_reg, filter_half_size, window_size, filter_num, timer=timer)
+                end
+
+                # USE INPAINTING TO CORRECT U_EST:
+                # 1) replicate borders
+                @timeit_debug timer "inpainting" begin
+                    middle_vals = Δ_u[window_half_size[1]+1:end-window_half_size[1],
+                                      window_half_size[2]+1:end-window_half_size[2]]
+                    Δ_u = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
+                    # 2) inpaint middle missing values
+                    if all(isnan.(real(Δ_u))) # if all are NaNs
+                        Δ_u = zeros(image_size)
+                    elseif any(isnan.(Δ_u)) # if some are NaNs
+                        LAP_julia.inpaint.inpaint_nans!(Δ_u)
+                    end
+                end # "inpainting"
+
+                # SMOOTH U_EST WITH A GAUSSIAN FILTER:
+                @timeit_debug timer "smoothing" begin
+                    Δ_u = LAP_julia.smooth_with_gaussian(Δ_u, window_half_size)
+                end
+
+                # add the Δ_u to my u_est
+                u_est = u_est + Δ_u
+
+                @timeit_debug timer "image interpolation" begin
+                    # depending on the size of the filter used, warp the source image closer to target using u_est
+                    if level < interpol_change_index
+                        # linear interpolation
+                        source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
+                    else
+                        # more accurate slower interpolation TODO
+                        source_reg = LAP_julia.interpolation.warp_img(source, real(u_est), imag(u_est))
+                    end
+                end # "interpolation"
+
+                if display
+                    figs[level, 1] = showflow(u_est, figtitle="U_EST (Level: " * string(level) * "/" * string(level_count) * ")")
+                    figs[level, 2] = showflow(Δ_u, figtitle="Δ_U (Level: " * string(level) * "/" * string(level_count) * ")")
+                    figs[level, 3] = imgshow(source_reg, figtitle="SOURCE_REG (Level: " * string(level) * "/" * string(level_count) * ")")
+                end
             end
 
             if display
-                figs[level, 1] = showflow(u_est, figtitle="U_EST (Level: " * string(level) * "/" * string(level_count) * ")")
-                figs[level, 2] = showflow(Δ_u, figtitle="Δ_U (Level: " * string(level) * "/" * string(level_count) * ")")
-                figs[level, 3] = imgshow(source_reg, figtitle="SOURCE_REG (Level: " * string(level) * "/" * string(level_count) * ")")
+                println("###################")
             end
-        end
-
-        if display
-            println("###################")
-        end
+        end # "single filter pyramid level"
     end
 
     if display; return u_est, source_reg, figs; end

@@ -16,7 +16,7 @@ using TestImages
 img = testimage("lena_gray")
 img = Float32.(img)
 wanted_max_displacement = 15
-constant_flow = true
+constant_flow = false
 
 imgshow(img)
 save("../PolyFilter_LAP/target.png", img)
@@ -247,7 +247,11 @@ sppflap_times[num] = median(bench.times) / 10^9
 sppflap_e_meds[num] = e_med(flow, u_est)
 sppflap_e_means[num] = e_mean(flow, u_est)
 showflow(u_est)
-showflow(flow)
+showflow(flow .- u_est)
+
+imgshow(img .- source_reg)
+imgoverlay(img, source_reg)
+
 
 
 sppflap_times
@@ -281,10 +285,10 @@ map(println, [lap_avg, pflap_avg, splap_avg, sppflap_avg])
 [0.232, 1.331, 1.835]
 [0.205, 0.546, 0.619]
 
-"chess"
+"const"
 map(println, [pflap_avg, lap_avg, sppflap_avg, splap_avg])
 ["Time", "e_med", "e_mean"]
-5.627 & 2.202 & 3.386
-1.002 & 1.522 & 3.945
-0.181 & 2.268 & 3.3
-0.18 & 1.872 & 4.054
+6.664 & 0.116 & 0.721
+1.019 & 2.553 & 3.149
+0.194 & 0.428 & 0.988
+0.196 & 2.285 & 2.524

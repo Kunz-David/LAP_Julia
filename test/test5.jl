@@ -9,7 +9,7 @@ img = Float32.(img)
 img = gen_chess()
 
 # genrate flow
-flow = gen_rand_flow(size(img), 7, 1000);
+flow = gen_tiled_flow(size(img), 7, 1000);
 
 showflow(flow)
 
@@ -161,7 +161,7 @@ using LAP_julia
 img = testimage("lena_gray")
 img = Float32.(img)
 
-flow = gen_rand_flow(size(img), 15, 100)
+flow = gen_tiled_flow(size(img), 15, 100)
 showflow(flow)
 
 # generate warpped image

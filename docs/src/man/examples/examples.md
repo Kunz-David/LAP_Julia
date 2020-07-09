@@ -21,13 +21,13 @@ ex_max_magnitude = 20
 ex_tile_size = 999 # This makes the flow uniform
 
 # Generate a random uniform flow
-uni_flow = gen_rand_flow(ex_size, ex_max_magnitude, ex_tile_size);
+uni_flow = gen_tiled_flow(ex_size, ex_max_magnitude, ex_tile_size);
 
 # Lets check what the flow looks like:
 showflow(uni_flow, figtitle="Uniform warp")
 ```
 
-*Check out the used functions: [`gen_rand_flow`](@ref), [`showflow`](@ref)*
+*Check out the used functions: [`gen_tiled_flow`](@ref), [`showflow`](@ref)*
 
 ### Non-uniform Smooth
 ```@example smooth
@@ -39,13 +39,13 @@ ex_max_magnitude = 20
 ex_tile_size = 60
 
 # Generate a random uniform flow
-smooth_flow = gen_rand_flow(ex_size, ex_max_magnitude, ex_tile_size);
+smooth_flow = gen_tiled_flow(ex_size, ex_max_magnitude, ex_tile_size);
 
 # Lets check what the flow looks like:
 showflow(smooth_flow, figtitle="Smooth warp")
 ```
 
-*Check out the used functions: [`gen_rand_flow`](@ref), [`showflow`](@ref)*
+*Check out the used functions: [`gen_tiled_flow`](@ref), [`showflow`](@ref)*
 
 ## Generate test images
 

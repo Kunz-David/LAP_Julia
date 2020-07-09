@@ -62,23 +62,58 @@ end
 # doest effect the number range of the results
 # also might improve the speed if the pixels are saved into a tmp var
 """
-    function window_sum!(filter_result, pixels, image_size, window_size)
+    function window_sum!(result, pixels, img_size, window)
 
-Filter the array `pixels` of shape `image_size` with a filter that performs a sum of values of the area `window_size`
-with each pixel as the center. Store the result in `filter_result`.
+Filter the array `pixels` of shape `img_size` with a filter that performs a sum of values of the area `window`
+with each pixel as the center. Store the result in `result`.
 The filtering uses `"symmetric"` padding.
+
+Note: For small images (around `256x256`) and small filters (window of size 9 and below) is faster than [`window_sum3!`](@ref).
 """
-function window_sum!(filter_result, pixels, image_size, window_size)
+function window_sum!(result, pixels, img_size, window)
     # prepare a kernel of ones of the window size
-    ones_arr_1 = centered(ones(window_size[1]))
-    ones_arr_2 = centered(ones(window_size[2]))
-    ones_kernel = kernelfactors((ones_arr_1, ones_arr_2))
+    ones_arr = centered(ones(window))
+    ones_kernel = kernelfactors((ones_arr, ones_arr))
 
     # filtering gets a sum of pixels of window size in each coord
-    imfilter!(reshape(filter_result, image_size), reshape(pixels, image_size), ones_kernel, "symmetric")
+    imfilter!(reshape(result, img_size), reshape(pixels, img_size), ones_kernel, "symmetric")
     return nothing
 end
 
+"""
+    function window_sum3!(result, pixels, img_size, window)
+
+Filter the array `pixels` of shape `img_size` with a filter that performs a sum of values of the area `window`
+with each pixel as the center. Store the result in `result`.
+The filtering uses `"symmetric"` padding.
+
+Note: For small images (around `256x256`) and large filters (window of size 11 and above) is faster than [`window_sum!`](@ref).
+"""
+function window_sum3!(result, pixels, img_size, w)
+    summed = padarray(reshape(pixels, img_size), Pad(:symmetric, (w, w)))
+    summed = cumsum2d!(summed, summed)
+    B = padarray(summed, Fill(0, (1, 1), (0, 0)))
+    c = img_size[1]
+
+    reshape(result, img_size) .= view(B, (1+w):(w+c), (1+w):(w+c)) .-
+              view(B, (1+w):(w+c), (-w):(c-w-1)) .-
+              view(B, (-w):(c-w-1), (1+w):(w+c)) .+
+              view(B, (-w):(c-w-1), (-w):(c-w-1))
+end
+
+"""
+    cumsum2d!(result, A)
+
+Cummulative sum over 2D matrix `A`, storing the result into `result`.
+"""
+function cumsum2d!(result, A)
+    cumsum!(result, A, dims = 1)
+    cumsum!(result, result, dims = 2)
+    return result
+end
+
+
+# TODO: this can be improved by using a cumsum alg
 function window_sum_around_points!(filter_result, pixels, image_size, window_size, points)
     # prepare a kernel of ones of the window size
     ones_arr_1 = centered(ones(window_size[1]))
@@ -104,4 +139,66 @@ end
 
 function sum_at_points(A, inds)
     return sum([A[ind] for ind in inds])
+end
+
+"""
+    gem3d!(A, b)
+
+Reduce the linear systems of equations ``C_n x_n = d_n`` to the row echelon form. The matrixes ``C``
+are slices from the first 2 dimensions of `A`, the vectors ``d`` are the slices from the first dimension
+of `b` and ``n`` is the size of the third dimension of `A`.
+
+See also: [`gem3d!`](@ref), [`back_substitution3d`](@ref)
+"""
+function gem3d!(A, b)
+    ratios = zeros(size(A, 3))
+    for k in axes(A,1)
+        for l in k+1:size(A, 2)
+            ratios .= A[l, k, :] ./ A[k, k, :]
+            A[l, :, :] .-= ratios' .* A[k, :, :]
+            b[l, :] .-= ratios .* b[k, :]
+        end
+    end
+end
+
+
+"""
+    back_substitution3d(A, b)
+
+Solve the linear systems of equations ``C_n x_n = d_n``, where the matrixes ``C`` (in row echelon form)
+are slices from the first 2 dimensions of `A`, the vectors ``d`` are the slices from the first dimension
+of `b` and ``n`` is the size of the third dimension of `A`.
+Returns the coefficients ``x_n`` as a 2D matrix `coeffs`, where the vectors ``x_n`` are the rows of this matrix.
+
+See also: [`gem3d!`](@ref), [`multi_mat_div2`](@ref)
+"""
+function back_substitution3d(A, b)
+    row_count = size(A, 1)
+    coeffs = zeros(size(A, 3), size(A, 1))
+    for k in row_count:-1:1
+        coeffs[:,k] = (b[k,:])'
+        for m in (k+1):row_count
+            coeffs[:,k] = coeffs[:,k]-A[k,m,:] .* coeffs[:,m]
+        end
+        coeffs[:,k]=coeffs[:,k]./A[k,k,:];
+    end
+    return coeffs
+end
+
+"""
+    multi_mat_div2(A, b)
+
+Solve the linear systems of equations ``C_n x_n = d_n``, where the matrixes ``C``
+are slices from the first 2 dimensions of `A`, the vectors ``d`` are the slices from the first dimension
+of `b` and ``n`` is the size of the third dimension of `A`.
+Returns the coefficients ``x_n`` as a 2D matrix `coeffs`, where the vectors ``x_n`` are the rows of this matrix.
+
+Note: Uses Gaussian elimination and back substitution.
+Note: For small matrices ``C``, this is an order of magnitude faster than
+
+See also: [`gem3d!`](@ref), [`back_substitution3d`](@ref)
+"""
+function multi_mat_div2(A, b)
+    gem3d!(A, b)
+    return back_substitution3d(A, b)
 end

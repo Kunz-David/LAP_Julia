@@ -28,7 +28,7 @@ img = mgrid
 
 
 #rand flow
-flow = gen_rand_flow(size(mgrid), 50);
+flow = gen_tiled_flow(size(mgrid), 50);
 
 #center flow:
 ix = size(img)[1]
@@ -60,7 +60,7 @@ gcf()
 showflow(flow, 20);
 gcf()
 
-u = gen_rand_flow((51, 123), 10)
+u = gen_tiled_flow((51, 123), 10)
 showflow(u)
 
 1

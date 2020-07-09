@@ -178,6 +178,8 @@ function showflow(flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=n
     ylabel("y - imag")
     title(figtitle)
 
+    # ax.invert_yaxis()
+
     if key == true
         # subplots_adjust(bottom=0.1)
         max_mag = LAP_julia.max_displacement(flow)

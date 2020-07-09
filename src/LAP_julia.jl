@@ -5,9 +5,9 @@ export
     # visualisation funcitons
     showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow, addpoints, imgoverlay,
     # useful helpers
-    mean,
+    mean, classic_alg,
     # data generation
-    gen_rand_flow, gen_chess, gen_init,
+    gen_tiled_flow, gen_chess, gen_init,
     # Main LAP funcitons
     single_lap, polyfilter_lap,
     polyfilter_lap_at_points, single_lap_at_points,
