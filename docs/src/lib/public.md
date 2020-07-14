@@ -15,7 +15,7 @@ Pages = ["public.md"]
 ### Types
 
 ```@autodocs
-Modules = [LAP_julia, LAP_julia.lap, LAP_julia.visualise, LAP_julia.inpaint, LAP_julia.gradient_points, LAP_julia.data_gen, LAP_julia.interpolation]
+Modules = [LAP_julia, LAP_julia.registration, LAP_julia.visualise, LAP_julia.inpaint, LAP_julia.gradient_points, LAP_julia.data_gen, LAP_julia.interpolation]
 Order = [:type]
 Private = false
 ```
@@ -23,7 +23,7 @@ Private = false
 ### Functions
 
 ```@autodocs
-Modules = [LAP_julia, LAP_julia.lap, LAP_julia.visualise, LAP_julia.inpaint, LAP_julia.gradient_points, LAP_julia.data_gen, LAP_julia.interpolation]
+Modules = [LAP_julia, LAP_julia.registration, LAP_julia.visualise, LAP_julia.inpaint, LAP_julia.gradient_points, LAP_julia.data_gen, LAP_julia.interpolation]
 Order = [:function]
 Private = false
 ```

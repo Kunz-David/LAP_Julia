@@ -78,12 +78,12 @@ showflow(gridded_scatter, figtitle="scatter")
 
 showflow(flow, figtitle="orig")
 
-import LAP_julia: helpers.mse, helpers.angle_rms, helpers.angle_mean_error, helpers.vec_len
+import LAP_julia: helpers.mse, helpers.angle_rmse, helpers.angle_mae, helpers.vec_len
 
 mse(gridded_scatter, flow)
 vec_len(mse(gridded_scatter, flow))
-angle_rms(gridded_scatter, flow)
-angle_mean_error(gridded_scatter, flow)
+angle_rmse(gridded_scatter, flow)
+angle_mae(gridded_scatter, flow)
 
 
 sum(flow - gridded_scatter)/length(flow)

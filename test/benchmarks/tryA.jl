@@ -101,8 +101,8 @@ push!(df, Dict(:Index => index
                ,:Point_count => point_count
                ,:Median_speed => median(bench).time
                ,:Magnitude_of_MSE => vec_len(mse(method_flow, flow))
-               ,:Angle_RMS => angle_rms(method_flow, flow)
-               ,:Angle_mean => angle_mean_error(method_flow, flow)
+               ,:Angle_RMS => angle_rmse(method_flow, flow)
+               ,:Angle_mean => angle_mae(method_flow, flow)
                ,:Benchmark => bench
                ,:Truth_flow => showflow(flow, figtitle="Truth flow", ret="PyObject")
                ,:Method_flow => showflow(method_flow, figtitle=(method * " flow"), ret="PyObject")
@@ -135,7 +135,7 @@ Point_counts = [9,
                 81,
                 100,
                 144]
-import LAP_julia: helpers.mse, helpers.vec_len, helpers.angle_rms, helpers.angle_mean_error
+import LAP_julia: helpers.mse, helpers.vec_len, helpers.angle_rmse, helpers.angle_mae
 
 let
     index = 0
@@ -181,8 +181,8 @@ let
                                    :Point_count => point_count,
                                    :Median_speed => median(bench).time,
                                    :Magnitude_of_MSE => vec_len(mse(method_flow, flow)),
-                                   :Angle_RMS => angle_rms(method_flow, flow),
-                                   :Angle_mean => angle_mean_error(method_flow, flow),
+                                   :Angle_RMS => angle_rmse(method_flow, flow),
+                                   :Angle_mean => angle_mae(method_flow, flow),
                                    :Benchmark => bench,
                                    :Truth_flow => showflow(flow, figtitle="Truth flow", ret="PyObject"),
                                    :Method_flow => showflow(method_flow, figtitle=(method * " flow"), ret="PyObject"),

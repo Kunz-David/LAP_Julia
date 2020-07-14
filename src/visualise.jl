@@ -1,10 +1,5 @@
-module visualise
-
-export showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow, addpoints, imgoverlay
 
 using PyPlot #: quiver, gcf, figure, imshow, subplots, title, xlabel, ylabel, gca
-import LAP_julia: interpolation.warp_img
-using LAP_julia
 using Printf
 
 # set plot size defaults
@@ -74,11 +69,15 @@ Return a figure with image `img`. Plot origin is in the botom left.
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `figtitle::String="Image"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
-
+- `origin_left_bot::Bool=false`: set the origin to the lower left corner, which is not typical for images (they will appear flipped).
 
 See also: [`showflow`](@ref), [`imgshowflow`](@ref), [`warp_imgshowflow`](@ref)
 """
-function imgshow(img; fig=nothing, figtitle::String="Image", ret::Symbol=:figure)
+function imgshow(img;
+                 fig=nothing,
+                 figtitle::String="Image",
+                 ret::Symbol=:figure,
+                 origin_left_bot::Bool=false)
 
     if fig == nothing
         fig, ax = subplots(dpi = 400)
@@ -92,6 +91,9 @@ function imgshow(img; fig=nothing, figtitle::String="Image", ret::Symbol=:figure
     imshow(img, cmap = :gray);
     # ax.set_ylim(0, size(img)[1]-1);
     # ax.set_xlim(0, size(img)[2]-1);
+    if origin_left_bot == true
+        ax.invert_yaxis()
+    end
 
     title(figtitle)
 
@@ -182,7 +184,7 @@ function showflow(flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=n
 
     if key == true
         # subplots_adjust(bottom=0.1)
-        max_mag = LAP_julia.max_displacement(flow)
+        max_mag = max_displacement(flow)
         label_text = "length = " * @sprintf("%0.2f", max_mag)
         ax.quiverkey(q, X=0.75, Y = 0.2, U = max_mag, coordinates="inches",
         label=label_text, labelpos = "E")
@@ -211,12 +213,22 @@ Return a figure with an image `img` and displacement field `flow`.
 - `key::Bool=true`: add key with maximum vector length.
 - `figtitle::String="Iamge with Flow"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
+- `origin_left_bot::Bool=true`: set the origin to the lower left corner, which is not typical for images (they will appear flipped).
 
 See also: [`imgshow`](@ref), [`showflow`](@ref), [`warp_imgshowflow`](@ref)
 
 """
-function imgshowflow(img, flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Image with Flow", ret::Symbol=:figure)
-    fig = imgshow(img, fig=fig, figtitle="", ret=:figure)
+function imgshowflow(img,
+                     flow::Flow;
+                     disp_type::Symbol=:full,
+                     skip_count=nothing, fig=nothing,
+                     mag::Real=1,
+                     key::Bool=true,
+                     figtitle::String="Image with Flow",
+                     ret::Symbol=:figure,
+                     origin_left_bot::Bool=true)
+
+    fig = imgshow(img, fig=fig, figtitle="", ret=:figure, origin_left_bot=origin_left_bot)
     showflow(flow, disp_type=disp_type, skip_count=skip_count, fig=fig, mag=mag, key=key, figtitle=figtitle, ret=ret);
 end
 
@@ -235,12 +247,20 @@ Return a figure with an image and a displacement field, where the image is warpe
 - `key::Bool=true`: add key with maximum vector length.
 - `figtitle::String="Iamge with Flow"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
+- `origin_left_bot::Bool=true`: set the origin to the lower left corner, which is not typical for images (they will appear flipped).
 
 See also: [`imgshow`](@ref), [`showflow`](@ref), [`imgshowflow`](@ref)
 """
-function warp_imgshowflow(img, flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Warped Image with Flow", ret::Symbol=:figure)
-    imgw = warp_img(img, -real(flow), -imag(flow))
-    imgshowflow(imgw, flow, disp_type=disp_type, skip_count=skip_count, fig=fig, mag=mag, key=key, figtitle=figtitle, ret=ret);
-end
+function warp_imgshowflow(img,
+                          flow::Flow;
+                          disp_type::Symbol=:full,
+                          skip_count=nothing,
+                          fig=nothing, mag::Real=1,
+                          key::Bool=true,
+                          figtitle::String="Warped Image with Flow",
+                          ret::Symbol=:figure,
+                          origin_left_bot::Bool=true)
 
-end #module
+    imgw = warp_img(img, -real(flow), -imag(flow))
+    imgshowflow(imgw, flow, disp_type=disp_type, skip_count=skip_count, fig=fig, mag=mag, key=key, figtitle=figtitle, ret=ret, origin_left_bot=origin_left_bot);
+end

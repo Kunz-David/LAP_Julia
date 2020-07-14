@@ -29,7 +29,7 @@ save("img.png", reverse(img, dims=1))
 
 imgshowflow(imgw, flow)
 
-u_est, coeffs = LAP_julia.lap.single_lap(img, imgw, 3, 7, [15, 15])
+u_est, coeffs = LAP_julia.registration.single_lap(img, imgw, 3, 7, [15, 15])
 
 showflow(u_est)
 showflow(flow)

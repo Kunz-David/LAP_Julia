@@ -57,10 +57,11 @@ polyfilter lap                       1    1.04s   100%   1.04s    549MiB  100%  
 ```
 - Pridana moznost casovat registracni metody.
 _Priklad:_
-```
+
+```julia
 using TimerOutputs, LAP_julia
 
-TimerOutputs.enable_debug_timings(LAP_julia.lap)
+TimerOutputs.enable_debug_timings(LAP_julia)
 timer = TimerOutput("Registration");
 @timeit timer "polyfilter lap" begin
     flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
@@ -99,7 +100,7 @@ print_timer(timer)
     - spolecne s vyberem bodu a interpolaci s `interpolate_flow` je to cele 5x rychlejsi. Dole pridavam kod na vyzkouseni.
     - je potreba zjistit za jakych podminek to funguje nejlepe. Udelat nejake testy??
     - je potreba dodelat dokumentaci.
-  - Funkce `polyfilter_lap_at_points` je zatim stejne rychla jako `polyfilter_lap` a je o neco nepresnejsi
+  - Funkce `sparse_pflap` je zatim stejne rychla jako `polyfilter_lap` a je o neco nepresnejsi
 
 - Interpolace/fitovani globalni deformace:
   - je implementovano pomoci RBF interpolace ve funkci `interpolate_flow`.
@@ -112,7 +113,7 @@ print_timer(timer)
   - chtel bych jeste pridat nejake lepsi porovnani vysledku metody a originalu, asi by stacilo neco jako `showflow(orig .- estim)`
 
 #### Plan praci
-1) Dodelat `polyfilter_lap_at_points` aby fungovala presnejsi
+1) Dodelat `sparse_pflap` aby fungovala presnejsi
 2) Psat psat psat (potrebuji mit 10 normostran do 29.5.2020) -> formou na semestralni projekt
   a) co je registrace, na co je a porovnani s tim co se dela ted ve svete
   b) z jakych metod vychazim a jak se je snazim zrychlit/zlepsit

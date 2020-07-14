@@ -1,7 +1,8 @@
 
 using ImageFiltering: centered, KernelFactors.gaussian, kernelfactors, imfilter
-using LAP_julia
-# using LAP_julia: Image
+using ImageDistances
+using TimerOutputs
+
 
 """
     pad_images(image1::Image, image2::Image)
@@ -83,33 +84,26 @@ function smooth_with_gaussian(u::Matrix{<:Number}, window_half_size)
     return u_out
 end
 
-"""
-    function mse(x, y)
 
-Calculates the mean squared error between `x` and `y`.
-"""
-function mse(x, y)
-    @assert (size(x) == size(y)) "sizes of $x and $y don't match"
-    return mean((x .- y).^2)
-end
 
 """
-    function angle_rms(x, y)
+    function angle_rmse(x, y)
 
 Calculate the root mean square error in angle between `x` and `y`. Output in degrees.
 """
-function angle_rms(x, y)
+function angle_rmse(x, y)
     @assert eltype(x) == eltype(y)
     @assert eltype(x) <: Complex
 
     return sqrt(mse(rad2deg.(angle.(x)), rad2deg.(angle.(y))))
 end
-"""
-    function angle_mean_error(x, y)
 
-Calculate the mean error in angle between `x` and `y`. Output in degrees.
 """
-function angle_mean_error(x, y)
+    function angle_mae(x, y)
+
+Calculate the mean absolute error in angle between `x` and `y`. Output in degrees.
+"""
+function angle_mae(x, y)
     return mean(abs.(rad2deg.(angle.(x)) - rad2deg.(angle.(y))))
 end
 
@@ -142,25 +136,110 @@ function inds_to_points(inds::Array{CartesianIndex, 1})
     return transpose([pos_x pos_y])
 end
 
+"""
+    max_displacement(flow)
 
+Find the maximum displacement of `flow`, ignoring `NaN`s.
+"""
 function max_displacement(flow)
-    magnitudes = map(x -> LAP_julia.vec_len(x), flow)
+    magnitudes = map(x -> vec_len(x), flow)
     max_mag = maximum(filter(!isnan, magnitudes))
     return max_mag
 end
 
+#TODO edit doc
 """
-    classic_alg(img, imgw, fhs, window_size)
+    lap(img, imgw, fhs, window_size)
 
 Perform the `single_lap` algorithm with post-proccessing (inpainting and smoothing).
 
 See also: [`single_lap`](@ref), [`inpaint_nans!`](@ref), [`smooth_with_gaussian`](@ref)
 """
-function classic_alg(img, imgw, fhs, window_size)
-    classic_estim = single_lap(img, imgw, fhs, window_size)
-    LAP_julia.inpaint_nans!(classic_estim)
-    LAP_julia.smooth_with_gaussian(classic_estim, window_size)
-    return classic_estim
+function lap(img::Image,
+             imgw::Image,
+             fhs,
+             window_size;
+             timer::TimerOutput=TimerOutput("lap"),
+             display::Bool=false)
+
+    @timeit_debug timer "lap" begin
+        classic_estim = single_lap(img, imgw, fhs, window_size, timer=timer, display=display)
+    end
+    @timeit_debug timer "inpainting" begin
+        inpaint_nans!(classic_estim)
+    end
+    @timeit_debug timer "smoothing" begin
+        smooth_with_gaussian(classic_estim, window_size)
+    end
+    @timeit_debug timer "generate source_reg" begin
+        source_reg = warp_img(imgw, -real(classic_estim), imag(classic_estim))
+    end
+    # if display
+    #     print_timer(timer)
+    # end
+    return classic_estim, source_reg
+end
+
+
+function sparse_lap(img,
+                    imgw,
+                    fhs,
+                    window_size;
+                    spacing::Integer=35,
+                    point_count::Integer=35,
+                    timer::TimerOutput=TimerOutput("sparse_lap"))
+    mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
+    @timeit_debug timer "find edge points" begin
+        inds = find_edge_points(img, spacing=spacing, number=point_count, mask=mask)
+    end
+    points = inds_to_points(inds)
+    @timeit_debug timer "sparse lap" begin
+        new_estim = single_lap_at_points(img, imgw, fhs, window_size, points, 3, timer=timer)
+    end
+    if all(isnan, [new_estim[ind] for ind in inds])
+        @timeit_debug timer "interpolate flow" begin
+            full_new_estim = zeros(size(new_estim)) .* im .+ zeros(size(new_estim))
+        end
+    else
+        @timeit_debug timer "interpolate flow" begin
+            full_new_estim = interpolate_flow(new_estim, inds)
+        end
+    end
+    @timeit_debug timer "generate source_reg" begin
+        source_reg = warp_img(imgw, -real(full_new_estim), imag(full_new_estim))
+    end
+    return full_new_estim, source_reg
+end
+
+
+function sparse_lap_win_sum1(img,
+                             imgw,
+                             fhs,
+                             window_size;
+                             spacing::Integer=35,
+                             point_count::Integer=35,
+                             timer::TimerOutput=TimerOutput("sparse_lap"))
+    mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
+    @timeit_debug timer "find edge points" begin
+        inds = find_edge_points(img, spacing=spacing, number=point_count, mask=mask)
+    end
+    points = inds_to_points(inds)
+    @timeit_debug timer "sparse lap" begin
+        new_estim = single_lap_at_points_win_sum1(img, imgw, fhs, window_size, points, 3, timer=timer)
+    end
+    if all(isnan, [new_estim[ind] for ind in inds])
+        @timeit_debug timer "interpolate flow" begin
+            full_new_estim = zeros(size(new_estim)) .* im .+ zeros(size(new_estim))
+        end
+    else
+        @timeit_debug timer "interpolate flow" begin
+            full_new_estim = interpolate_flow(new_estim, inds)
+        end
+    end
+    @timeit_debug timer "generate source_reg" begin
+        source_reg = warp_img(imgw, -rea(full_new_estim), imag(full_new_estim))
+    end
+    return full_new_estim, source_reg
 end
 
 

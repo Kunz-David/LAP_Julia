@@ -124,8 +124,8 @@ lap_e_means = zeros(3)
 # one
 flow = flow1; num = 1;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est = classic_alg(img, imgw, fhs, window)
-bench = @benchmark classic_alg(img, imgw, fhs, window)
+u_est = lap(img, imgw, fhs, window)
+bench = @benchmark lap(img, imgw, fhs, window)
 lap_times[num] = median(bench.times) / 10^9
 lap_e_meds[num] = e_med(flow, u_est)
 lap_e_means[num] = e_mean(flow, u_est)
@@ -133,8 +133,8 @@ lap_e_means[num] = e_mean(flow, u_est)
 # two
 flow = flow2; num = 2;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est = classic_alg(img, imgw, fhs, window)
-bench = @benchmark classic_alg(img, imgw, fhs, window)
+u_est = lap(img, imgw, fhs, window)
+bench = @benchmark lap(img, imgw, fhs, window)
 lap_times[num] = median(bench.times) / 10^9
 lap_e_meds[num] = e_med(flow, u_est)
 lap_e_means[num] = e_mean(flow, u_est)
@@ -142,8 +142,8 @@ lap_e_means[num] = e_mean(flow, u_est)
 # three
 flow = flow3; num = 3;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est = classic_alg(img, imgw, fhs, window)
-bench = @benchmark classic_alg(img, imgw, fhs, window)
+u_est = lap(img, imgw, fhs, window)
+bench = @benchmark lap(img, imgw, fhs, window)
 lap_times[num] = median(bench.times) / 10^9
 lap_e_meds[num] = e_med(flow, u_est)
 lap_e_means[num] = e_mean(flow, u_est)
@@ -195,7 +195,7 @@ splap_e_meds
 splap_e_means
 
 # classic
-function classic_alg(img, imgw, fhs, window_size)
+function lap(img, imgw, fhs, window_size)
     classic_estim = single_lap(img, imgw, fhs, window_size)
     LAP_julia.inpaint_nans!(classic_estim)
     LAP_julia.smooth_with_gaussian(classic_estim, window_size)
@@ -207,7 +207,7 @@ function new_alg(img, imgw, fhs, window_size)
     mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
     inds = find_edge_points(img, mask=mask)
     points = LAP_julia.inds_to_points(inds)
-    new_estim = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+    new_estim = single_lap_at_points(img, imgw, fhs, window_size, points, 3)
     full_new_estim = interpolate_flow(new_estim, inds)
     return full_new_estim
 end
@@ -223,7 +223,7 @@ sppflap_e_means = zeros(3)
 # one
 flow = flow1; num = 1;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap_at_points(img, imgw, display=false)
+u_est, source_reg = sparse_pflap(img, imgw, display=false)
 bench = @benchmark new_alg(img, imgw, fhs, window)
 sppflap_times[num] = median(bench.times) / 10^9
 sppflap_e_meds[num] = e_med(flow, u_est)
@@ -232,7 +232,7 @@ sppflap_e_means[num] = e_mean(flow, u_est)
 # two
 flow = flow2; num = 2;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap_at_points(img, imgw, display=false)
+u_est, source_reg = sparse_pflap(img, imgw, display=false)
 bench = @benchmark new_alg(img, imgw, fhs, window)
 sppflap_times[num] = median(bench.times) / 10^9
 sppflap_e_meds[num] = e_med(flow, u_est)
@@ -241,7 +241,7 @@ sppflap_e_means[num] = e_mean(flow, u_est)
 # three
 flow = flow3; num = 3;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap_at_points(img, imgw, display=false)
+u_est, source_reg = sparse_pflap(img, imgw, display=false)
 bench = @benchmark new_alg(img, imgw, fhs, window)
 sppflap_times[num] = median(bench.times) / 10^9
 sppflap_e_meds[num] = e_med(flow, u_est)

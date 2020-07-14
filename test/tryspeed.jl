@@ -58,13 +58,13 @@ window = [47, 47]
 showflow(flow)
 
 # no gem
-oldflow = LAP_julia.classic_alg(img, imgw, fhs, window)
-time6 = @benchmark LAP_julia.classic_alg(img, imgw, fhs, window)
+oldflow = LAP_julia.lap(img, imgw, fhs, window)
+time6 = @benchmark LAP_julia.lap(img, imgw, fhs, window)
 time6 = mean(time6.times)
 
 # gem
-newflow = LAP_julia.classic_alg(img, imgw, fhs, window)
-time7 = @benchmark LAP_julia.classic_alg(img, imgw, fhs, window)
+newflow = LAP_julia.lap(img, imgw, fhs, window)
+time7 = @benchmark LAP_julia.lap(img, imgw, fhs, window)
 time7 = mean(time7.times)
 
 time6/time7
@@ -183,7 +183,7 @@ A = small
 maximum(abs.(result1 - result2))
 
 ## time classic alg improved
-TimerOutputs.enable_debug_timings(LAP_julia.lap)
+TimerOutputs.enable_debug_timings(LAP_julia.registration)
 
 img, imgw, flow = gen_init()
 
@@ -192,4 +192,4 @@ window = [47, 47]
 
 fhs = 3
 window = [7, 7]
-newflow = LAP_julia.classic_alg(img, imgw, fhs, window)
+newflow = LAP_julia.lap(img, imgw, fhs, window)

@@ -1,10 +1,8 @@
 
-using LAP_julia
 using Test
 using FileIO, Images, Colors
 using CSV
-using TimerOutputs
-include("../src/helpers.jl")
+
 
 # !!! commented out because of local repository of test images. !!!
 
@@ -35,7 +33,7 @@ include("../src/helpers.jl")
 # end
 
 @testset "Registration Algorithms" begin
-    TimerOutputs.enable_debug_timings(LAP_julia.lap)
+    TimerOutputs.enable_debug_timings(LAP_julia.registration)
     img, imgw, flow = gen_init(:lena, flow_args=[15, 140])
 
     @testset "PFLAP" begin
@@ -48,7 +46,7 @@ include("../src/helpers.jl")
         flow_est, source_reg = polyfilter_lap(img, imgw, display=false)
         showflow(flow)
         showflow(flow_est)
-        @test angle_mean_error(flow, flow_est) < 10
+        @test angle_mae(flow, flow_est) < 10
 
 
 

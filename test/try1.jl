@@ -332,7 +332,7 @@ chess_norm_f = Float32.(chess_norm)
 chess_warp_f = Float32.(chess_warp)
 
 
-u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, 15, [15, 15])
+u_est, coeffs = LAP_julia.registration.single_lap(chess_norm_f, chess_warp_f, 3, 15, [15, 15])
 
 # *************************
 # 2) ONE PIXEL IMAGE SHIFT
@@ -357,7 +357,7 @@ end
 filter_half_size = 2
 filter_size = filter_half_size * 2 + 1
 
-u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
+u_est, coeffs = LAP_julia.registration.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
 
 # using ImageFiltering: Pad
 #

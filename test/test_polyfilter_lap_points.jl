@@ -7,7 +7,7 @@ using BenchmarkTools
 ###
 
 img1, imgw1, flow1 = gen_init(flow_args=(20,60));
-flow_est1, source_reg1, figs1 = polyfilter_lap_at_points(img1, imgw1)
+flow_est1, source_reg1, figs1 = sparse_pflap(img1, imgw1)
 
 
 showflow(flow_est1, figtitle="estim")
@@ -45,7 +45,7 @@ imgshow(img); addpoints(inds)
 
 
 # classic
-function classic_alg(img, imgw, fhs, window_size)
+function lap(img, imgw, fhs, window_size)
     classic_estim = single_lap(img, imgw, fhs, window_size)
     LAP_julia.inpaint_nans!(classic_estim)
     LAP_julia.smooth_with_gaussian(classic_estim, window_size)
@@ -92,10 +92,10 @@ function compare_speed_dep_on_max_displacement(maxd)
     window_size = [fhs*2+1,fhs*2+1]
 
     new_flow = new_alg(img, imgw, fhs, window_size)
-    classic_flow = classic_alg(img, imgw, fhs, window_size)
+    classic_flow = lap(img, imgw, fhs, window_size)
 
     new_bench = @benchmark $new_alg($img, $imgw, $fhs, $window_size)
-    classic_bench = @benchmark $classic_alg($img, $imgw, $fhs, $window_size)
+    classic_bench = @benchmark $lap($img, $imgw, $fhs, $window_size)
 
     classic_speed = median(classic_bench.times)
     classic_mse = mse(classic_flow, flow)
@@ -203,7 +203,7 @@ showflow(flow, figtitle="orig")
 single_points_full_flow = new_alg(img, imgw, fhs, window_size)
 showflow(single_points_full_flow, figtitle="estim using single points")
 
-single_full_flow = classic_alg(img, imgw, fhs, window_size)
+single_full_flow = lap(img, imgw, fhs, window_size)
 showflow(single_full_flow, figtitle="estim using classic single")
 
 

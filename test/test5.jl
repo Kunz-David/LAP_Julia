@@ -79,8 +79,8 @@ imgfilt = copy(img)
 imgfilt = similar(img)
 imgfilt2 = copy(img)
 
-LAP_julia.lap.
-@benchmark LAP_julia.lap.filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
+LAP_julia.registration.
+@benchmark LAP_julia.registration.filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
 
 @benchmark imfilter!(imgfilt2, img, kernel, "symmetric")
 
@@ -309,9 +309,9 @@ showflow(flow .- poly_est, mag=1, figtitle="difference: classic poly - orig")
 showflow((flow .- poly_est)[10:size(flow, 1)-10, 10:size(flow, 1)-10], mag=2)
 
 
-poly_point_est, source_point_reg, figs_point = polyfilter_lap_at_points(img, imgw, display=true)
+poly_point_est, source_point_reg, figs_point = sparse_pflap(img, imgw, display=true)
 
-poly_point_less_est, source_point_reg, figs_point, last_u = polyfilter_lap_at_points(img, imgw, display=true, point_count=20, spacing=40)
+poly_point_less_est, source_point_reg, figs_point, last_u = sparse_pflap(img, imgw, display=true, point_count=20, spacing=40)
 
 showflow(poly_point_est, figtitle="points")
 showflow(flow, figtitle="original")
@@ -321,7 +321,7 @@ showflow(flow .- poly_point_less_est, mag=2)
 
 
 #comapare speed:
-@btime poly_point_est, source_point_reg = polyfilter_lap_at_points(img, imgw, display=false)
+@btime poly_point_est, source_point_reg = sparse_pflap(img, imgw, display=false)
 @btime poly_est, source_reg = polyfilter_lap(img, imgw, display=false)
 
 

@@ -1,10 +1,5 @@
-module gradient_points
 
-export find_edge_points
-
-using StatsBase
 using Images, ImageFiltering, LinearAlgebra
-using LAP_julia
 
 
 """
@@ -148,5 +143,3 @@ function fill_circle!(mag, pos, spacing, marker)
         end
     end
 end
-
-end # module

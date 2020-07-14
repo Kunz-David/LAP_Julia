@@ -34,7 +34,7 @@ end
 filter_half_size = 2
 filter_size = filter_half_size * 2 + 1
 
-u_est, coeffs = LAP_julia.lap.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
+u_est, coeffs = LAP_julia.registration.single_lap(chess_norm_f, chess_warp_f, 3, filter_half_size, [filter_size, filter_size])
 
 window_half_size = [1, 1]
 u_out = LAP_julia.helpers.smooth_with_gaussian(u_est[3:end-2, 3:end-2], window_half_size)

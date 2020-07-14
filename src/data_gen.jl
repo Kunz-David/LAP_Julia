@@ -1,9 +1,15 @@
-module data_gen
+using TestImages: testimage
 
-export gen_tiled_flow, gen_chess, gen_init, gen_quad_flow
+"""
+    gen_lena()
 
-using TestImages
-using LAP_julia
+Get a `256x256` grayscale "lena" image.
+"""
+function gen_lena()
+    img = testimage("lena_gray")
+    img = Float64.(img)
+    return img
+end
 
 """
     gen_quad_flow(img_size, max_magnitude=20)
@@ -12,12 +18,14 @@ Generate a smoothly varying locally constant random flow of size `img_size` and 
 displacement of `max_magnitude` using a quadratic function:
 
 ```math
-f(z) = a + b*z + c*z^2,\\
-z = x + y*i,\\
+f(z) = a + b*z + c*z^2,
+
+z = x + y*i,
+
 x, y ∈ (0,1)
 ```
 
-The constants `a`, `b` and `c` are random numbers from the normal distribution with mean `0` and standard deviation 1.
+The constants `a`, `b` and `c` are random numbers from the normal distribution with mean 0 and standard deviation 1.
 See also: [`showflow`](@ref), [`gen_tiled_flow`](@ref), [`Flow`](@ref)
 """
 function gen_quad_flow(img_size, max_magnitude=20)
@@ -30,12 +38,12 @@ function gen_quad_flow(img_size, max_magnitude=20)
     A = Y .* im + X
 
     B = f.(A)
-    max_len = maximum(LAP_julia.vec_len.(B))
+    max_len = maximum(vec_len.(B))
     B = B .* (max_magnitude/max_len)
 
     return B
 end
-∈
+
 
 """
     gen_tiled_flow(flow_size::Tuple{T, T}=(200, 200), max_magnitude::Real=20, tile_size=nothing; filter_amp=nothing)::Flow where {T <: Integer}
@@ -83,10 +91,10 @@ function gen_tiled_flow(flow_size::Tuple{T, T}=(200, 200),
     rand_flow = uv_flow[1:flow_size[1], 1:flow_size[2], 1] .+ (im * uv_flow[1:flow_size[1], 1:flow_size[2], 2]);
 
     # blur to make it continuous
-    rand_flow = LAP_julia.smooth_with_gaussian(rand_flow, [filter_amp, filter_amp])
+    rand_flow = smooth_with_gaussian(rand_flow, [filter_amp, filter_amp])
 
     # set maximum magnitude to actually be the max_magnitude
-    max_len = maximum(LAP_julia.vec_len.(rand_flow))
+    max_len = maximum(vec_len.(rand_flow))
     rand_flow = rand_flow .* (max_magnitude/max_len)
 
     return rand_flow
@@ -117,6 +125,7 @@ Create the usual testing data; img, imgw, flow.
 - `img_type::Symbol=:lena`: what base image is used. [Options: `:lena`, `:chess`]
 - `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`]
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
+- `chess_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
 
 # Examples
 ```@example
@@ -124,12 +133,15 @@ Create the usual testing data; img, imgw, flow.
 img, imgw, flow = gen_init(:chess, :quad, flow_args=[20])
 ```
 """
-function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[])
+function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[], chess_args=[])
     if img_type == :lena
-        img = testimage("lena_gray")
-        img = Float64.(img)
+        img = gen_lena()
     elseif img_type == :chess
-        img = gen_chess(50,4)
+        if chess_args == []
+            img = gen_chess(50,4)
+        else
+            img = gen_chess((Int64.(chess_args))...)
+        end
     end
 
     if flow_type == :quad
@@ -142,5 +154,3 @@ function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[])
 
     return img, imgw, flow
 end
-
-end # module

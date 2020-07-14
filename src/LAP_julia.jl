@@ -1,22 +1,44 @@
 
 module LAP_julia
 
+using TimerOutputs
+
 export
     # visualisation funcitons
-    showflow, imgshowflow, imgshow, warp_imgshowflow, showsparseflow, addpoints, imgoverlay,
+    showflow,
+    imgshowflow,
+    imgshow,
+    warp_imgshowflow,
+    showsparseflow,
+    addpoints,
+    imgoverlay,
     # useful helpers
-    mean, classic_alg,
+    mean,
+    classic_alg,
     # data generation
-    gen_tiled_flow, gen_chess, gen_init,
+    gen_tiled_flow,
+    gen_chess,
+    gen_init,
+    gen_lena,
     # Main LAP funcitons
-    single_lap, polyfilter_lap,
-    polyfilter_lap_at_points, single_lap_at_points,
+    lap,
+    sparse_lap,
+    sparse_lap_win_sum1,
+    sparse_pflap,
+    single_lap,
+    polyfilter_lap,
+    sparse_pflap,
+    single_lap_at_points,
     # Types
-    SimpleKeypoint, Image, Flow,
+    Image,
+    Flow,
     # Point location
     find_edge_points,
     # Interpolation
-    warp_img, interpolate_flow
+    warp_img,
+    interpolate_flow,
+    #experimenting
+    test_registration_alg
 
 
 """
@@ -36,21 +58,14 @@ const Flow{T} = Matrix{Complex{T}} where T <: Real
 
 include("helpers.jl")
 include("inpaint.jl")
-include("lap.jl")
 include("interpolation.jl")
 include("visualise.jl")
 include("data_gen.jl")
 include("gradient_points.jl")
-
-# Revise.includet("lap.jl")
-
-using .lap
-using .visualise
-using .inpaint: inpaint_nans!
-using .gradient_points
-using .interpolation
-using .data_gen
-
+include("lap_algs/helpers.jl")
+include("lap_algs/multi.jl")
+include("lap_algs/single.jl")
+include("experimenting/speedtest.jl")
 
 
 loaded() = println("LAP_julia succesfully loaded!")

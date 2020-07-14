@@ -216,9 +216,9 @@ two = [0 + 6im, 3 + im]
 one = [1 + 0im]
 two = [0 + im]
 
-import LAP_julia: helpers.angle_rms
+import LAP_julia: helpers.angle_rmse
 
-angle_rms(one, two)
+angle_rmse(one, two)
 
 rad2deg.(angle.(one).-angle.(two))
 

@@ -126,7 +126,7 @@ imgshow(img)
 
 ## single lap
 
-function classic_alg(img, imgw, fhs, window_size)
+function lap(img, imgw, fhs, window_size)
     classic_estim = single_lap(img, imgw, fhs, window_size)
     LAP_julia.inpaint_nans!(classic_estim)
     LAP_julia.smooth_with_gaussian(classic_estim, window_size)
@@ -136,16 +136,16 @@ end
 
 fhs = 23
 window = [47, 47]
-u_est = classic_alg(img, imgw, fhs, window);
+u_est = lap(img, imgw, fhs, window);
 
 showflow(u_est)
 
-@time classic_alg(img, imgw, fhs, window)
+@time lap(img, imgw, fhs, window)
 
 # profile
 Profile.init()
 Profile.init(10^10, 0.00001)
-Juno.@profiler classic_alg(img, imgw, fhs, window);
+Juno.@profiler lap(img, imgw, fhs, window);
 
 
 ## test A

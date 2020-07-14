@@ -153,7 +153,7 @@ imgshow(source_reg)
 LAP_julia.mean(source_reg)
 
 
-u_est_p, source_reg_p = polyfilter_lap_at_points(img, imgw)
+u_est_p, source_reg_p = sparse_pflap(img, imgw)
 
 showflow(u_est_p)
 
@@ -164,7 +164,7 @@ LAP_julia.mean(abs.(img .- source_reg_p))
 dist_euclid = sqrt(sum(img .- imgw).^2)/length(img)
 
 
-u_est, source_reg_p_ed, figs, Δ_u = polyfilter_lap_at_points(img, imgw)
+u_est, source_reg_p_ed, figs, Δ_u = sparse_pflap(img, imgw)
 
 imgshow(source_reg_p_ed)
 imgshow(img)
@@ -202,7 +202,7 @@ window_size = [31, 31]
 mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
 inds = find_edge_points(img, mask=mask)
 points = LAP_julia.inds_to_points(inds)
-new_estim = single_lap_at_points(img, imgw, fhs, window_size, 3, points)
+new_estim = single_lap_at_points(img, imgw, fhs, window_size, points, 3)
 showflow(new_estim, disp_type=:sparse, figtitle="Estimated Displacement Vectors")
 savefig("../plots/sparse_lap_estimate_image.png")
 

@@ -1,8 +1,3 @@
-module inpaint
-
-export inpaint_nans!
-
-using LAP_julia
 using ImageFiltering: kernelfactors, imfilter!, imfilter, centered
 
 """
@@ -53,5 +48,3 @@ function inpaint_nans!(flow::Flow)
 
     return nothing
 end
-
-end #module

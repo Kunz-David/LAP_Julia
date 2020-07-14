@@ -1,8 +1,4 @@
-module interpolation
 
-export warp_img, interpolate_flow
-
-using LAP_julia
 using Interpolations, ColorVectorSpace, ImageFiltering, Images, ScatteredInterpolation
 
 """
@@ -61,7 +57,7 @@ function interpolate_flow(flow::Flow, inds::Array{CartesianIndex, 1}, method::T=
     @assert length(non_nan) != 0
 
     # interpolate
-    itp = ScatteredInterpolation.interpolate(method, LAP_julia.inds_to_points(inds[non_nan]), samples[non_nan]);
+    itp = ScatteredInterpolation.interpolate(method, inds_to_points(inds[non_nan]), samples[non_nan]);
     gridPoints = meshgrid(size(flow)...)'
     interpolated = ScatteredInterpolation.evaluate(itp, gridPoints)
 
@@ -69,5 +65,3 @@ function interpolate_flow(flow::Flow, inds::Array{CartesianIndex, 1}, method::T=
 
     return gridded
 end
-
-end #module

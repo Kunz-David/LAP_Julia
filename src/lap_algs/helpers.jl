@@ -13,7 +13,6 @@ using ComputationalResources, Images
 #     end
 # end
 
-#FIXME: use window_size not fhs
 function filt_onebyone!(imgfilt, img, kernel, fhs, points)
     padded = padarray(img, Pad(:symmetric, fhs, fhs))
 
@@ -51,7 +50,6 @@ function multi_mat_div_at_points(A, b, points, image_size)
     b = reshape(b, size(b)[1], image_size...)
     for k in axes(points)[2]
         # ind = points[:, k]...
-        ind = CartesianIndex(points[:, k]...)
         @views res[:, points[:, k]...] = qr(A[:, :, points[:, k]...], Val(true)) \ b[:, points[:, k]...]
     end
     res = reshape(res, size(res)[1], :)
@@ -72,12 +70,12 @@ Note: For small images (around `256x256`) and small filters (window of size 9 an
 """
 function window_sum!(result, pixels, img_size, window)
     # prepare a kernel of ones of the window size
-    ones_arr = centered(ones(window))
+    ones_arr = centered(ones(window[1]))
     ones_kernel = kernelfactors((ones_arr, ones_arr))
 
     # filtering gets a sum of pixels of window size in each coord
     imfilter!(reshape(result, img_size), reshape(pixels, img_size), ones_kernel, "symmetric")
-    return nothing
+    return result
 end
 
 """
@@ -89,7 +87,8 @@ The filtering uses `"symmetric"` padding.
 
 Note: For small images (around `256x256`) and large filters (window of size 11 and above) is faster than [`window_sum!`](@ref).
 """
-function window_sum3!(result, pixels, img_size, w)
+function window_sum3!(result, pixels, img_size, window)
+    w = Int64.((window[1]-1)/2)
     summed = padarray(reshape(pixels, img_size), Pad(:symmetric, (w, w)))
     summed = cumsum2d!(summed, summed)
     B = padarray(summed, Fill(0, (1, 1), (0, 0)))
@@ -113,16 +112,46 @@ function cumsum2d!(result, A)
 end
 
 
+"""
+    prepare_gaussian_filters(filter_half_size)
+
+Get KernelFactors for the first 3 forward and backward gaussian filters from the LAP paper.
+"""
+function prepare_gaussian_filters(filter_half_size)
+
+    filter_size = 2 * filter_half_size + 1
+
+    # Calculate separable filters from basis:
+    sigma = (filter_half_size + 2) / 4
+    centered_inds = centered(-filter_half_size:filter_half_size)
+    gaus = gaussian(sigma, filter_size)
+    gaus_der = gaus .* centered_inds .* (-1)/sigma^2
+    gaus_der_flip = reverse(gaus_der, dims=1)
+
+    forward_kernels = [kernelfactors((gaus, gaus)),
+                       kernelfactors((gaus, gaus_der_flip)),
+                       kernelfactors((gaus_der_flip, gaus))]
+
+    backward_kernels = [kernelfactors((gaus, gaus)),
+                        kernelfactors((gaus, gaus_der)),
+                        kernelfactors((gaus_der, gaus))]
+
+    return forward_kernels, backward_kernels
+end
+
+
+
+
 # TODO: this can be improved by using a cumsum alg
-function window_sum_around_points!(filter_result, pixels, image_size, window_size, points)
+function window_sum_around_points!(result, pixels, img_size, window, points)
     # prepare a kernel of ones of the window size
-    ones_arr_1 = centered(ones(window_size[1]))
-    ones_arr_2 = centered(ones(window_size[2]))
-    ones_kernel = kernelfactors((ones_arr_1, ones_arr_2))
+    ones_arr = centered(ones(window[1]))
+    ones_kernel = kernelfactors((ones_arr, ones_arr))
 
     # filtering gets a sum of pixels of window size in each coord
-    filt_onebyone!(reshape(filter_result, image_size...), reshape(pixels, image_size), ones_kernel, Int64((window_size[1]-1)/2), points)
-    return nothing
+    filt_onebyone!(reshape(result, img_size...), reshape(pixels, img_size), ones_kernel, Int64((window[1]-1)/2), points)
+    # imfilter!(reshape(result, img_size), reshape(pixels, img_size), ones_kernel, "symmetric")
+    return result
 end
 
 function add_at_points(A, B, inds)
@@ -151,7 +180,7 @@ of `b` and ``n`` is the size of the third dimension of `A`.
 See also: [`gem3d!`](@ref), [`back_substitution3d`](@ref)
 """
 function gem3d!(A, b)
-    ratios = zeros(size(A, 3))
+    ratios = similar(A, size(A, 3))
     for k in axes(A,1)
         for l in k+1:size(A, 2)
             ratios .= A[l, k, :] ./ A[k, k, :]
@@ -174,7 +203,7 @@ See also: [`gem3d!`](@ref), [`multi_mat_div2`](@ref)
 """
 function back_substitution3d(A, b)
     row_count = size(A, 1)
-    coeffs = zeros(size(A, 3), size(A, 1))
+    coeffs = similar(A, (size(A, 3), size(A, 1)))
     for k in row_count:-1:1
         coeffs[:,k] = (b[k,:])'
         for m in (k+1):row_count
