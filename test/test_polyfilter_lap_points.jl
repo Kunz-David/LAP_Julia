@@ -44,13 +44,13 @@ imgshow(img); addpoints(inds)
 
 
 
-# classic
-function lap(img, imgw, fhs, window_size)
-    classic_estim = single_lap(img, imgw, fhs, window_size)
-    LAP_julia.inpaint_nans!(classic_estim)
-    LAP_julia.smooth_with_gaussian(classic_estim, window_size)
-    return classic_estim
-end
+# # classic
+# function lap(img, imgw, fhs, window_size)
+#     classic_estim = single_lap(img, imgw, fhs, window_size)
+#     LAP_julia.inpaint_nans!(classic_estim)
+#     LAP_julia.smooth_with_gaussian!(classic_estim, window_size)
+#     return classic_estim
+# end
 
 # new
 function new_alg(img, imgw, fhs, window_size)

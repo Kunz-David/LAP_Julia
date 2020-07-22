@@ -32,26 +32,21 @@ using CSV
 #     end
 # end
 
-@testset "Registration Algorithms" begin
-    TimerOutputs.enable_debug_timings(LAP_julia.registration)
-    img, imgw, flow = gen_init(:lena, flow_args=[15, 140])
-
-    @testset "PFLAP" begin
-        timer = TimerOutput("Registration");
-        @timeit timer "polyfilter lap" begin
-            flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
-        end
-        print_timer(timer)
-
-        flow_est, source_reg = polyfilter_lap(img, imgw, display=false)
-        showflow(flow)
-        showflow(flow_est)
-        @test angle_mae(flow, flow_est) < 10
-
-
-
-
-
+# @testset "Registration Algorithms" begin
+#     TimerOutputs.enable_debug_timings(LAP_julia.registration)
+#     img, imgw, flow = gen_init(:lena, flow_args=[15, 140])
+#
+#     @testset "PFLAP" begin
+#         timer = TimerOutput("Registration");
+#         @timeit timer "polyfilter lap" begin
+#             flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
+#         end
+#         print_timer(timer)
+#
+#         flow_est, source_reg = polyfilter_lap(img, imgw, display=false)
+#         showflow(flow)
+#         showflow(flow_est)
+#         @test angle_mae(flow, flow_est) < 10
 
 
 

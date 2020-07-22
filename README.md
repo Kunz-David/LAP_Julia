@@ -25,6 +25,116 @@ using LAP_julia
 
 ## Stav práce
 
+
+### 22.7.2020
+- Podarilo se mi docilit dalsich zrychleni na implementaci LAP a PF-LAP lap metod, bohuzel je `imfilter` funkce na filtraci
+obrazku v Julii pomalejsi nez `imfilter` v Matlabu, s tim nic moc neudelam, muzu predvest v exprimentu.
+- Zrychlil jsem implementaci obou sparse metod: `sparse_pflap` a `sparse_lap` a pridal jsem _fitovani na globalni kvadraticky model_.
+  - Obe vyber fitovani a dalsich paramatru spusteni je v dokumentaci.
+  - Fitovani na kvadraticky model je rychle a pro konstantni displacement pole je presnejsi nez PF-LAP viz priklad.
+- pridano nekolik testovacich funkci `test_registration_alg`, `asses_flow_quality` ...
+- nekolik experimentu: viz `test/experiments/...`
+  - mezi residualem linearnich rovnic LAP metody a chybou odhadu posunu je korelace - prumerna `Normalized Cross-correlation(ncc)` = `0.22` (v experimentu je histogram rozlozeni) - nevim jak toho vyuzit zatim, musi se to docela narocne zpetne spocitat.
+- snazim se zprovoznit benchmark BIRL pro moje methody.
+
+
+__Test rychlosti:__
+- obrazek: `257x257`, displacement pole: konstatni, max posun: `15 pix`, (`img, imgw, flow = gen_init(:lena, :uniform, flow_args=[-1 - 4im, 15]);`), pocet mereni: `10`
+
+__sparse_pflap__:
+- ARG metody: pocet bodu: `459`, max povolena vzdalenost bodu: `10 pix`
+```julia
+timer=TimerOutput("sparse pf lap");
+method_kwargs = Dict(:timer => timer, :display => false, :max_repeats => 1, :point_count => 500, :spacing => 10)
+flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow, [], method_kwargs, timer=timer)
+```
+
+_sparse_pflap_ - rychlost:
+```
+────────────────────────────────────────────────────────────────────────────────────────
+                                                Time                   Allocations      
+                                        ──────────────────────   ───────────────────────
+           Tot / % measured:                 34.0s / 16.4%           3.98GiB / 98.2%    
+
+Section                         ncalls     time   %tot     avg     alloc   %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+sparse pf lap                       10    5.57s   100%   557ms   3.91GiB  100%    401MiB
+  single filter pyramid level       70    5.17s  92.7%  73.8ms   3.85GiB  98.3%  56.3MiB
+    single lap at points            70    4.12s  73.9%  58.9ms   3.32GiB  84.7%  48.5MiB
+      filtering                     70    3.00s  53.9%  42.9ms    687MiB  17.1%  9.81MiB
+      prepare A and b               70    551ms  9.88%  7.87ms    417MiB  10.4%  5.96MiB
+        window sum part 1          210    303ms  5.43%  1.44ms    250MiB  6.25%  1.19MiB
+        window sum part 2          140    247ms  4.43%  1.76ms    166MiB  4.15%  1.19MiB
+      multi mat div                 70    543ms  9.74%  7.75ms   2.13GiB  54.3%  31.1MiB
+      calculate flow                70    545μs  0.01%  7.78μs   1.01MiB  0.03%  14.8KiB
+    interpolate image               70    824ms  14.8%  11.8ms    420MiB  10.5%  6.00MiB
+    interpolate flow                70    189ms  3.38%  2.69ms   88.8MiB  2.22%  1.27MiB
+  setup                             10    407ms  7.31%  40.7ms   67.1MiB  1.67%  6.71MiB
+    find edge points                10    285ms  5.11%  28.5ms   41.9MiB  1.04%  4.19MiB
+    hist match                      10   88.4ms  1.59%  8.84ms   5.15MiB  0.13%   528KiB
+────────────────────────────────────────────────────────────────────────────────────────
+```
+
+_sparse_pflap_ - presnost:
+```
+mse            | 0.001
+rmse           | 0.037
+time           | 10.343
+ncc            | 0.981
+flow_mae       | 0.243
+angle-rmse     | 0.592
+angle-mae      | 0.489
+mae            | 0.019
+flow_rmse      | 0.09
+```
+
+__pflap__:
+
+```julia
+timer=TimerOutput("pf lap");
+method_kwargs =Dict(:timer => timer, :display => false, :max_repeats => 1)
+flow_est, source_reg, timer, results = test_registration_alg(polyfilter_lap, img, imgw, flow, [], method_kwargs, timer=timer);
+```
+
+_pflap_ - rychlost:
+```
+────────────────────────────────────────────────────────────────────────────────────────
+                                                Time                   Allocations      
+                                        ──────────────────────   ───────────────────────
+           Tot / % measured:                 16.9s / 63.3%           4.80GiB / 98.7%    
+
+Section                         ncalls     time   %tot     avg     alloc   %tot      avg
+────────────────────────────────────────────────────────────────────────────────────────
+pf lap                              10    10.7s   100%   1.07s   4.73GiB  100%    484MiB
+  single filter pyramid level       70    10.3s  95.9%   147ms   4.68GiB  99.0%  68.5MiB
+    LAP                             70    5.97s  55.6%  85.2ms   2.85GiB  60.3%  41.7MiB
+      filtering                     70    3.21s  29.9%  45.8ms    687MiB  14.2%  9.81MiB
+      multli mat div gem            70    1.04s  9.68%  14.8ms    840MiB  17.3%  12.0MiB
+      prepare A and b               70    957ms  8.93%  13.7ms    521MiB  10.8%  7.45MiB
+        window sum part 1          210    453ms  4.23%  2.16ms    250MiB  5.16%  1.19MiB
+        window sum part 2          140    301ms  2.81%  2.15ms    166MiB  3.44%  1.19MiB
+      calculate flow                70    152ms  1.42%  2.18ms    140MiB  2.89%  2.00MiB
+    inpainting                      70    1.79s  16.7%  25.6ms   1.10GiB  23.2%  16.1MiB
+      replicating borders           70   82.3ms  0.77%  1.18ms    124MiB  2.56%  1.77MiB
+    smoothing                       70    1.44s  13.4%  20.5ms    258MiB  5.32%  3.68MiB
+    image interpolation             70    989ms  9.22%  14.1ms    420MiB  8.67%  6.00MiB
+  setup                             10    439ms  4.09%  43.9ms   50.0MiB  1.03%  5.00MiB
+────────────────────────────────────────────────────────────────────────────────────────
+```
+
+_pflap_ - presnost:
+```
+mse            | 0.003
+rmse           | 0.052
+time           | 10.725
+ncc            | 0.989
+flow_mae       | 0.54
+angle-rmse     | 3.13
+angle-mae      | 1.033
+mae            | 0.04
+flow_rmse      | 2.126
+```
+
 ### 9.7.2020
 - Julia implementace PF-LAP a LAP metod je ted o neco rychlejsi nez implementace v Matlabu
   - PF-LAP Matlab implementace cca 1.5s na obrazky 256x256, Julia cca 1s

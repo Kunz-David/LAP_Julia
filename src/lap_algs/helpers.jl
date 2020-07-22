@@ -32,25 +32,26 @@ and ``c_i``, where ``D_i`` is `A[:, :, i]`, ``c_i`` is `b[:, i]` and ``i`` is th
 of `b` and third dimension of `A`. In other words, each row of `E` is the solution to one matrix from `A` and it's
 corresponding vector from `b`.
 """
-function multi_mat_div(A, b)
-    res = zeros(size(A)[1], size(A)[3])
+function multi_mat_div_using_qr(A, b)
+    res = Array{Float64,2}(undef, size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
-    for k in axes(A)[3]
+    @simd for k in axes(A)[3]
         @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
     end
     return transpose(res)
 end
 
-
-function multi_mat_div_at_points(A, b, points, image_size)
+# TODO change to inds
+function multi_mat_div_at_points(A, b, inds, image_size)
+    points = inds_to_points(inds)
     # [2, pix_count]
-    res = zeros(size(A)[1], size(A)[3])
-    res = reshape(res, size(A)[1], image_size...)
+    res = similar(A, size(A, 1) + 1, size(points, 2)) # example size = (filter_count, point_count)
     A = reshape(A, size(A)[1], size(A)[1], image_size...)
     b = reshape(b, size(b)[1], image_size...)
+
     for k in axes(points)[2]
         # ind = points[:, k]...
-        @views res[:, points[:, k]...] = qr(A[:, :, points[:, k]...], Val(true)) \ b[:, points[:, k]...]
+        @views res[:, points[:, k]...] .= cat(qr(A[:, :, points[:, k]...], Val(true)) \ b[:, points[:, k]...], dims=2)
     end
     res = reshape(res, size(res)[1], :)
     return transpose(res)
@@ -62,11 +63,11 @@ end
 """
     function window_sum!(result, pixels, img_size, window)
 
-Filter the array `pixels` of shape `img_size` with a filter that performs a sum of values of the area `window`
-with each pixel as the center. Store the result in `result`.
-The filtering uses `"symmetric"` padding.
+Get a sum of values (using a "symmetric" padding on the borders) in a window `window` around each point and saving the
+sum into `result`.
 
-Note: For small images (around `256x256`) and small filters (window of size 9 and below) is faster than [`window_sum3!`](@ref).
+Note: Uses a filter algorithm with a 2D ones kernel.
+Note: For small images (around `256x256`) and small filters (window of size 9 and below) is faster than [`window_sum3!`](@ref). <- factcheck this again
 """
 function window_sum!(result, pixels, img_size, window)
     # prepare a kernel of ones of the window size
@@ -81,23 +82,64 @@ end
 """
     function window_sum3!(result, pixels, img_size, window)
 
-Filter the array `pixels` of shape `img_size` with a filter that performs a sum of values of the area `window`
-with each pixel as the center. Store the result in `result`.
-The filtering uses `"symmetric"` padding.
+Get a sum of values (using a "symmetric" padding on the borders) in a window `window` around each point and saving the
+sum into `result`.
 
-Note: For small images (around `256x256`) and large filters (window of size 11 and above) is faster than [`window_sum!`](@ref).
+Note: Uses a cumsum algorithm.
+Note: For small images (around `256x256`) and large filters (window of size 11 and above) is faster than [`window_sum!`](@ref). <- factcheck this again
 """
 function window_sum3!(result, pixels, img_size, window)
     w = Int64.((window[1]-1)/2)
-    summed = padarray(reshape(pixels, img_size), Pad(:symmetric, (w, w)))
+    summed = padarray(reshape(pixels, img_size), Pad(:symmetric, (w+1, w+1), (w, w)))
+    @views summed[-w, :] .= 0
+    @views summed[:, -w] .= 0
+
     summed = cumsum2d!(summed, summed)
-    B = padarray(summed, Fill(0, (1, 1), (0, 0)))
     c = img_size[1]
 
-    reshape(result, img_size) .= view(B, (1+w):(w+c), (1+w):(w+c)) .-
-              view(B, (1+w):(w+c), (-w):(c-w-1)) .-
-              view(B, (-w):(c-w-1), (1+w):(w+c)) .+
-              view(B, (-w):(c-w-1), (-w):(c-w-1))
+    reshape(result, img_size) .= view(summed, (1+w):(w+c), (1+w):(w+c)) .-
+                                 view(summed, (1+w):(w+c), (-w):(c-w-1)) .-
+                                 view(summed, (-w):(c-w-1), (1+w):(w+c)) .+
+                                 view(summed, (-w):(c-w-1), (-w):(c-w-1))
+    return result
+end
+
+"""
+    function window_sum3!(result, pixels, img_size, window, inds)
+
+Get a sum of values (using a "symmetric" padding on the borders) in a window `window` around `inds` and saving the
+sum into `result`.
+
+Note: Uses a cumsum algorithm.
+"""
+function window_sum3_at_inds!(result, pixels, img_size, window, inds)
+
+    w = Int64.((window[1]-1)/2)
+    summed = padarray(reshape(pixels, img_size), Pad(:symmetric, (w+1, w+1), (w, w)))
+    @views summed[-w, :] .= 0
+    @views summed[:, -w] .= 0
+    summed = cumsum2d!(summed, summed)
+
+    a = CartesianIndex(w, w)
+    b = CartesianIndex(w, -w-1)
+    c = CartesianIndex(-w-1, w)
+    d = CartesianIndex(-w-1, -w-1)
+    for (matrix_ind, result_ind)  in zip(inds, CartesianIndices(result))
+        result[result_ind] = summed[matrix_ind+a] -
+                          summed[matrix_ind+b] -
+                          summed[matrix_ind+c] +
+                          summed[matrix_ind+d]
+    end
+    return result
+end
+
+"""
+    to_lin_index(cart_ind, size)
+
+Get linear index from CartesianIndex `cart_ind` of 2D matrix of size `size`.
+"""
+@inline function to_lin_index(cart_ind, size)
+    return size[2]*(cart_ind[2]-1)+cart_ind[1]
 end
 
 """

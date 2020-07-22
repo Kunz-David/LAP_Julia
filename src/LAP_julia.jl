@@ -16,7 +16,9 @@ export
     mean,
     classic_alg,
     # data generation
+    gen_quad_flow,
     gen_tiled_flow,
+    gen_uniform_flow,
     gen_chess,
     gen_init,
     gen_lena,
@@ -37,6 +39,7 @@ export
     # Interpolation
     warp_img,
     interpolate_flow,
+    interpolate_flow_quad,
     #experimenting
     test_registration_alg
 
@@ -66,6 +69,8 @@ include("lap_algs/helpers.jl")
 include("lap_algs/multi.jl")
 include("lap_algs/single.jl")
 include("experimenting/speedtest.jl")
+include("experimenting/qualitytest.jl")
+include("experimenting/visualise.jl")
 
 
 loaded() = println("LAP_julia succesfully loaded!")

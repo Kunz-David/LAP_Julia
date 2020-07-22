@@ -44,6 +44,25 @@ function gen_quad_flow(img_size, max_magnitude=20)
     return B
 end
 
+"""
+    gen_uniform_flow(flow_size=(200, 200), vector=1 + 1im, max_magnitude=vec_len(vector))
+
+Generate a uniform flow of size `flow_size`, where every displacement vector is `vector`, scaled by `max_magnitude`.
+
+Note: `max_magnitude` = `vec_len(vector)` by default,
+so if nothing is enetered as `max_magnitude` the flow is made up of `vector` and is not scaled.
+"""
+function gen_uniform_flow(flow_size=(200, 200),
+                          vector=1 + 1im,
+                          max_magnitude=vec_len(vector))
+
+    flow = ones(flow_size) .* vector
+
+    max_len = vec_len(vector)
+    flow = flow .* (max_magnitude/max_len)
+    return flow
+end
+
 
 """
     gen_tiled_flow(flow_size::Tuple{T, T}=(200, 200), max_magnitude::Real=20, tile_size=nothing; filter_amp=nothing)::Flow where {T <: Integer}
@@ -91,7 +110,7 @@ function gen_tiled_flow(flow_size::Tuple{T, T}=(200, 200),
     rand_flow = uv_flow[1:flow_size[1], 1:flow_size[2], 1] .+ (im * uv_flow[1:flow_size[1], 1:flow_size[2], 2]);
 
     # blur to make it continuous
-    rand_flow = smooth_with_gaussian(rand_flow, [filter_amp, filter_amp])
+    rand_flow = smooth_with_gaussian!(rand_flow, [filter_amp, filter_amp])
 
     # set maximum magnitude to actually be the max_magnitude
     max_len = maximum(vec_len.(rand_flow))
@@ -123,7 +142,7 @@ Create the usual testing data; img, imgw, flow.
 
 # Arguments
 - `img_type::Symbol=:lena`: what base image is used. [Options: `:lena`, `:chess`]
-- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`]
+- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`]
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
 - `chess_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
 
@@ -148,6 +167,8 @@ function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[],
         flow = gen_quad_flow(size(img), flow_args...)
     elseif flow_type == :tiled
         flow = gen_tiled_flow(size(img), flow_args...)
+    elseif flow_type == :uniform
+        flow = gen_uniform_flow(size(img), flow_args...)
     end
 
     imgw = warp_img(img, -real(flow), -imag(flow))

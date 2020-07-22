@@ -1,36 +1,32 @@
-using LAP_julia
 using TimerOutputs
 
-function asses_source_reg_quality(target, source_reg; title="", display::Bool=true)
-    functions = [ncc, mae, rmse, mse]
-    names_short = ["ncc", "mae", "rmse", "mse"]
-    vals = map(x -> x(target, source_reg), functions)
-    names_vals_dict = Dict(names_short[i] => vals[i] for i in 1:4)
-    return names_vals_dict
-end
 
-function asses_flow_quality(flow, flow_est; title="", display::Bool=true)
-    functions = [angle_mae, angle_rmse, mae, mse]
-    names_short = ["angle-mae", "angle-rmse", "mae", "rmse"]
-    # names = ["angle mean absolute error", "angle root mean squared error", "mean absolute error", "root mean squared error"]
-    vals = map(x -> x(flow, flow_est), functions)
-    names_vals_dict = Dict(names_short[i] => vals[i] for i in 1:4)
-    return names_vals_dict
-end
+"""
+    test_registration_alg(args, kwargs)
 
-function print_results(names_vals_dict, title="")
-    max_len = maximum(length.(keys(names_vals_dict)))
-    line_len = max_len + 5
-    if title != ""
-        println(repeat("-", line_len+10))
-        println(repeat(" ", 2) * title)
-        println(repeat("-", line_len+10))
-    end
-    lines = [repeat(" ", 2) * x * repeat(" ", line_len-length(x)) * "| " * string(round(y, digits=3)) for (x, y) in names_vals_dict]
-    map(x -> println(x), lines)
-end
+Test a registration function `reg_fun` by timing it and comparing its outputs to the ground truth `flow` and the `target` image.
 
+# Arguments:
+- `reg_fun`: registration function.
+- `target::Image`: target image.
+- `source::Image`: source image to be warped closer to `target`.
+- `flow::Flow`: truth displacement flow warping `target` to `source`.
+- `reg_fun_args=[]`: arguments for the registration function.
+- `reg_fun_kwargs::Dict=Dict()`: keyword arguments for the registration function.
 
+# Keyword Arguments:
+- `display::Bool=true`: print debugging info and test results.
+- `timer::TimerOutput=TimerOutput("blank")`: timer to for certain blocks of code in the `reg_fun`.
+
+# Outputs:
+- `flow_est`: estimated transformation flow.
+- `source_reg`: `source` image registered.
+- `timer`: timings of the `reg_fun` insides.
+- `results`: Dict with results of the quality of the registration.
+- [`(outputs)`]: other outputs of the `reg_fun` besides `flow_est` and `source_reg`.
+
+See also: [`lap`](@ref), [`sparse_lap`](@ref),[`polyfilter_lap`](@ref), [`sparse_pflap`](@ref), [`Flow`](@ref)
+"""
 function test_registration_alg(reg_fun,
                                target::Image,
                                source::Image,
@@ -49,7 +45,7 @@ function test_registration_alg(reg_fun,
     end # "timer"
 
     # get total runtime
-    runtime = TimerOutputs.tottime(timer)/10e8
+    runtime = TimerOutputs.time(timer[timer.name])/10e8
     # test flow quality
     flow_names_vals_dict = asses_flow_quality(flow, flow_est)
     # test source_reg quality
@@ -61,14 +57,12 @@ function test_registration_alg(reg_fun,
     if display
         print_timer(timer)
         println()
-        print_results(results)
+        print_dict(results)
+    end
+
+    if length(outputs) >= 3
+        return flow_est, source_reg, timer, results, outputs[3:end]
     end
 
     return flow_est, source_reg, timer, results
 end
-
-
-# for reg_fun in [sparse_lap, lap]
-#     s = Symbol(reg_fun)
-#     println(s)
-# end

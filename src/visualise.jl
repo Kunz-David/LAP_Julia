@@ -21,11 +21,15 @@ rc("image", origin="lower")
 # rcdefaults()
 
 # TODO: add docs
-function addpoints(inds; ret::Symbol=:figure)
+function addpoints(inds; ret::Symbol=:figure, labels=[])
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
 
     ax = PyPlot.scatter(pos_y, pos_x, marker = :x)
+
+    for (k, label) in enumerate(labels)
+        annotate(label, (pos_y[k], pos_x[k]))
+    end
 
     if ret == :figure
         return gcf()
@@ -111,7 +115,7 @@ Return a figure with the displacement field `flow` by default skipping some vect
 
 # Arguments
 - `flow::Flow`: the vector flow to be plotted.
-- `disp_type::Symbol=:full` : display mode, either `:full` -> display all the vectors, or `:sparse` -> displays only the vectors above a threshold.
+- `disp_type::Symbol=:full` : display mode, either `:full` -> display all the vectors, or `:sparse` -> displays only the vectors above a threshold, or `:auto` which decide for you based on the data.
 - `skip_count=nothing`: the number of vectors to skip between each displayed vector. By default set so that the output is ``20 × 20`` vectors.
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `mag::Real=1`: magnify the plotted vectors.
@@ -121,7 +125,7 @@ Return a figure with the displacement field `flow` by default skipping some vect
 
 See also: [`imgshow`](@ref), [`imgshowflow`](@ref), [`warp_imgshowflow`](@ref)
 """
-function showflow(flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
+function showflow(flow::Flow; disp_type::Symbol=:auto, skip_count=nothing, fig=nothing, mag::Real=1, key::Bool=true, figtitle::String="Flow", ret::Symbol=:figure)
 
     # set defaults
     vecs_in_one_dim = 20
@@ -135,6 +139,9 @@ function showflow(flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=n
     uv_flow[:, :, 2] = imag(flow)
 
     n = skip_count+1
+    # if n == 1
+    #     n = 2
+    # end
 
 
     # meshgrid(x, y) = (repeat(x, outer=length(y)), repeat(y, inner=length(x)))
@@ -144,18 +151,31 @@ function showflow(flow::Flow; disp_type::Symbol=:full, skip_count=nothing, fig=n
     # The y coordinates of the arrow locations
     Y = [1:size(flow, 1);]
 
+    min_threshold = 1e-10
+
+    if disp_type == :auto
+        if count(x -> vec_len(x) > min_threshold, flow)/length(flow) <= 0.1
+            disp_type = :sparse
+        else
+            disp_type = :full
+        end
+    end
+
     if disp_type == :full
         trimmed_real = fill(NaN, size(uv_flow[:,:,1]))
         trimmed_real[1:n:end, 1:n:end] .= uv_flow[1:n:end, 1:n:end, 1]
         trimmed_imag = fill(NaN, size(uv_flow[:,:,2]))
         trimmed_imag[1:n:end, 1:n:end] .= uv_flow[1:n:end, 1:n:end, 2]
     elseif disp_type == :sparse
-        min_threshold = 1e-10
         cond = ((abs.(real(flow)) .> min_threshold) .| (abs.(imag(flow)) .> min_threshold))
         trimmed_real = fill(NaN, size(uv_flow[:,:,1]))
         trimmed_real[cond] .= uv_flow[:, :, 1][cond]
         trimmed_imag = fill(NaN, size(uv_flow[:,:,2]))
         trimmed_imag[cond] .= uv_flow[:, :, 2][cond]
+        if all(isnan, trimmed_real) || all(isnan, trimmed_imag)
+            trimmed_imag = zeros(size(trimmed_imag))
+            trimmed_real = zeros(size(trimmed_real))
+        end
     end
 
     maxi = maximum(filter(!isnan, abs.([trimmed_imag trimmed_real])))

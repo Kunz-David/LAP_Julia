@@ -34,13 +34,14 @@ function inpaint_nans!(flow::Flow)
         imfilter!(estim_flow, mask .* flow, kernf, "symmetric")
 
         # identify the newly estimated
-        newly_inpainted = ((div_coef .!= 0) .* (mask .== 0))
+        newly_inpainted = ((div_coef .!= 0) .& (mask .== 0))
 
         # set newly inpainted
-        @views flow[newly_inpainted] = estim_flow[newly_inpainted] ./ div_coef[newly_inpainted]
+        @views flow[newly_inpainted] .= estim_flow[newly_inpainted] ./ div_coef[newly_inpainted]
 
         # update mask
-        @views mask[newly_inpainted] = ones(sum(newly_inpainted))
+        # putting .= 1 here is a badly Errored bug.
+        @views mask[newly_inpainted] .= true
 
         # update while condition
         zero_in_mask = any(mask .== 0)

@@ -180,7 +180,7 @@ u_est = single_lap(img, imgw, 20, [41,41])
 
 showflow(u_est)
 LAP_julia.inpaint_nans!(u_est)
-u_est_sm = LAP_julia.smooth_with_gaussian(u_est, 20)
+u_est_sm = LAP_julia.smooth_with_gaussian!(u_est, 20)
 
 showflow(u_est_sm)
 
