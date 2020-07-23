@@ -33,9 +33,8 @@ img, imgw, flow = gen_init();
 timer=TimerOutput("sparse pf lap");
 # choose method params
 method_kwargs = Dict(:timer => timer, :display => false, :max_repeats => 1, :point_count => 500, :spacing => 10)
-# run `sparse_pflap`
+# run and test `sparse_pflap`
 flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow, [], method_kwargs, timer=timer)
-
 ```
 
 See also: [`lap`](@ref), [`sparse_lap`](@ref),[`pflap`](@ref), [`sparse_pflap`](@ref), [`Flow`](@ref)
