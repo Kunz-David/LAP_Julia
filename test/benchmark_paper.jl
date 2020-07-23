@@ -80,8 +80,8 @@ pflap_e_means = zeros(3)
 # one
 flow = flow1; num = 1;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap(img, imgw, display=false);
-bench = @benchmark polyfilter_lap(img, imgw, display=false)
+u_est, source_reg = pflap(img, imgw, display=false);
+bench = @benchmark pflap(img, imgw, display=false)
 pflap_times[num] = median(bench.times) / 10^9
 pflap_e_meds[num] = e_med(flow, u_est)
 pflap_e_means[num] = e_mean(flow, u_est)
@@ -89,8 +89,8 @@ pflap_e_means[num] = e_mean(flow, u_est)
 # two
 flow = flow2; num = 2;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap(img, imgw, display=false);
-bench = @benchmark polyfilter_lap(img, imgw, display=false)
+u_est, source_reg = pflap(img, imgw, display=false);
+bench = @benchmark pflap(img, imgw, display=false)
 pflap_times[num] = median(bench.times) / 10^9
 pflap_e_meds[num] = e_med(flow, u_est)
 pflap_e_means[num] = e_mean(flow, u_est)
@@ -99,8 +99,8 @@ pflap_e_means[num] = e_mean(flow, u_est)
 # three
 flow = flow3; num = 3;
 imgw = warp_img(img, -real(flow), -imag(flow));
-u_est, source_reg = polyfilter_lap(img, imgw, display=false);
-bench = @benchmark polyfilter_lap(img, imgw, display=false)
+u_est, source_reg = pflap(img, imgw, display=false);
+bench = @benchmark pflap(img, imgw, display=false)
 pflap_times[num] = median(bench.times) / 10^9
 pflap_e_meds[num] = e_med(flow, u_est)
 pflap_e_means[num] = e_mean(flow, u_est)

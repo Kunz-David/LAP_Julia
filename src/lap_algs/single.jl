@@ -49,7 +49,7 @@ Return an estimate of a smoothly varying flow of size of `target` which is the d
 - `timer::TimerOutput=TimerOutput("LAP")`: provide a timer which times certain blocks in the function.
 - `display::Bool=false`: verbose and debug prints.
 
-See also: [`polyfilter_lap`](@ref), [`showflow`](@ref), [`warp_imgshowflow`](@ref), [`imgshowflow`](@ref)
+See also: [`pflap`](@ref), [`showflow`](@ref), [`warp_imgshowflow`](@ref), [`imgshowflow`](@ref)
 """
 function single_lap(target::Image,
                     source::Image,
@@ -168,7 +168,7 @@ Return a vector of displacements that transforms `source` closer to `target` at 
 - `timer::TimerOutput=TimerOutput("Sparse LAP")`: provide a timer which times certain blocks in the function.
 - `display::Bool=false`: verbose and debug prints.
 
-See also: [`polyfilter_lap`](@ref), [`showflow`](@ref), [`single_lap`](@ref), [`polyfilter_lap_at_points`](@ref).
+See also: [`pflap`](@ref), [`showflow`](@ref), [`single_lap`](@ref), [`sparse_pflap`](@ref).
 """
 function single_lap_at_points(target::Image,
                               source::Image,
@@ -201,8 +201,10 @@ function single_lap_at_points(target::Image,
     @timeit_debug timer "filtering" begin
         if filter_count == 3
             # temporary place to store filtered images
-            tmp_filtered_1 = fill(NaN, image_size)
-            tmp_filtered_2 = fill(NaN, image_size)
+            # tmp_filtered_1 = fill(NaN, image_size)
+            # tmp_filtered_2 = fill(NaN, image_size)
+            tmp_filtered_1 = similar(target)
+            tmp_filtered_2 = similar(target)
 
             # basis 1 - (gaus, gaus) both forward and backward
             kernf_1 = kernelfactors((gaus, gaus))
@@ -278,8 +280,9 @@ function single_lap_at_points(target::Image,
     end # "calculate flow"
 
     # dont use estimations whose displacement is larger than the filter_half_size
+    displacement_mask = (real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .<= filter_half_size^2
 
-    # u_est_at_inds[(real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .> filter_half_size^2] .= NaN .+ NaN .* 1im;
+
     # println(u_est_at_inds[(real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .> filter_half_size^2],
     #         inds[(real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .> filter_half_size^2])
     # println(count((real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .> filter_half_size^2))
@@ -306,7 +309,7 @@ function single_lap_at_points(target::Image,
     #     end
     # end
 
-    return u_est_at_inds
+    return u_est_at_inds[displacement_mask], inds[displacement_mask]
 
 end
 

@@ -1,4 +1,4 @@
-using LAP_julia: inds_to_points, asses_flow_quality
+using LAP_julia: inds_to_points, assess_flow_quality
 
 ## testing
 
@@ -17,10 +17,10 @@ showflow(flow_est)
 estim_flow = interpolate_flow_quad(estim_at_inds, inds, size(flow))
 estim_flow_rbf = interpolate_flow(estim_at_inds, inds, size(flow))
 
-asses_flow_quality(flow, estim_flow)
+assess_flow_quality(flow, estim_flow)
 
 
-asses_flow_quality(flow, estim_flow_rbf)
+assess_flow_quality(flow, estim_flow_rbf)
 
 showflow(flow, figtitle="original")
 showflow(estim_flow, figtitle="quad estimate")
@@ -30,8 +30,8 @@ showflow(estim_flow_rbf, figtitle="rbf estimate")
 estim_flow = interpolate_flow_quad(estim_at_inds, inds, size(flow))
 estim_flow_rbf = interpolate_flow(estim_at_inds, inds, size(flow))
 
-asses_flow_quality(flow, estim_flow)
-asses_flow_quality(flow, estim_flow_rbf)
+assess_flow_quality(flow, estim_flow)
+assess_flow_quality(flow, estim_flow_rbf)
 
 
 showflow(estim_flow)
@@ -40,7 +40,7 @@ showflow(flow_truth .- estim_flow)
 
 
 showflow(rbf_flow)
-asses_flow_quality(flow, rbf_flow)
+assess_flow_quality(flow, rbf_flow)
 showflow(flow_truth .- rbf_flow)
 
 

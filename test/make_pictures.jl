@@ -136,7 +136,7 @@ methods = ["bunwarpj", "pflap_matlab"]
 img, imgw, flow = gen_init(flow_args=[20, 120])
 showflow(flow)
 
-u_est, source_reg = polyfilter_lap(img, imgw)
+u_est, source_reg = pflap(img, imgw)
 
 LAP_julia.mean(abs.(img .- imgw))
 LAP_julia.mean(abs.(img .- source_reg))

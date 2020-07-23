@@ -8,9 +8,6 @@ TODO:
 - check whether window_sum_around_points calculates only around points and not on whole window.
 
 
-- make a smooth displacement field funciton in julia
-  - can use Augmentor
-
 - add base 6 to single lap
 
 - test how the size of the filter affects the quality of a single_lap run

@@ -69,7 +69,7 @@ end
 
 Return a figure with image `img`. Plot origin is in the botom left.
 
-# Arguments
+# Keyword Arguments
 - `fig=nothing`: add a figure to plot in. By defaults creates a blank new figure.
 - `figtitle::String="Image"`: add title to the figure.
 - `ret::Symbol=:figure`: set return object, by default returns Figure, other options: :pyobject returns a PyObject. (Using figure makes Juno directly plot.)
@@ -113,7 +113,7 @@ end
 
 Return a figure with the displacement field `flow` by default skipping some vectors to make it easy to read.
 
-# Arguments
+# Keyword Arguments
 - `flow::Flow`: the vector flow to be plotted.
 - `disp_type::Symbol=:full` : display mode, either `:full` -> display all the vectors, or `:sparse` -> displays only the vectors above a threshold, or `:auto` which decide for you based on the data.
 - `skip_count=nothing`: the number of vectors to skip between each displayed vector. By default set so that the output is ``20 × 20`` vectors.
@@ -223,7 +223,7 @@ end
 
 Return a figure with an image `img` and displacement field `flow`.
 
-# Arguments
+# Keyword Arguments
 - `img`: the image to be plotted.
 - `flow::Flow`: the vector flow to be plotted.
 - `disp_type::Symbol=:full` : display mode, either `:full` -> display all the vectors, or `:sparse` -> displays only the vectors above a threshold.
@@ -257,7 +257,7 @@ end
 
 Return a figure with an image and a displacement field, where the image is warped by the displacement field.
 
-# Arguments
+# Keyword Arguments
 - `img`: the image to be plotted.
 - `flow::Flow`: the vector flow to be plotted.
 - `disp_type::Symbol=:full` : display mode, either `:full` -> display all the vectors, or `:sparse` -> displays only the vectors above a threshold.

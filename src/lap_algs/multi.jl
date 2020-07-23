@@ -7,23 +7,23 @@ using BenchmarkTools
 
 #TODO: add see section about timing in the docs to the api
 """
-    polyfilter_lap(target::Image, source::Image; filter_num::Integer=3, max_repeats::Integer=1, display::Bool=true)
+    pflap(args; kwargs)
 
 Find a transformation flow (complex displacment field), that transforms image `source` to image `target`.
+Returns the transformation a [`Flow`](@ref) and the registered `source` image.
 
 # Arguments
 - `target::Image`: the image we want `source` to look like.
 - `source::Image`: warped image we want to transform into `target`.
-- `filter_num::Integer=3`: the number of basis filters used in `single_lap` calls (so far only =3 implemented).
+- `filter_count::Integer=3`: the number of basis filters used in `single_lap` calls (so far only =3 implemented).
 - `max_repeats::Integer=1`: the maximum number of times an iteration of one filter size can be repeated.
 - `display::Bool=true`: use verbose prints and return an array of figures.
-- `timer::TimerOutput=TimerOutput("polyfilter_lap")`: provide a timer which times certain blocks in the function.
+- `timer::TimerOutput=TimerOutput("pflap")`: provide a timer which times certain blocks in the function.
 
 # Outputs
 - `flow::Flow`: is the complex vector field that transforms `source` closer to `target`.
 - `source_reg::Image`: is the image `source` transformed by `flow`.
-- [`figs::Matrix{Figure}`: is a 2D array of `PyPlot` Figures which shows the work of the algorithm at each iteration.
-For each iteration there are 3 Figures in this order: 1) current `u_est`, 2) newest addition to `u_est` `Δ_u`, 3) current `source_reg`.]
+- [`figs::Matrix{Figure}`: is a 2D array of `PyPlot` Figures which shows the work of the algorithm at each iteration. For each iteration there are 3 Figures in this order: 1) current `u_est`, 2) newest addition to `u_est` `Δ_u`, 3) current `source_reg`.]
 
 # Describtion
 Implements the basic concept of `Algorithm 2` from the [paper](http://www.ee.cuhk.edu.hk/~tblu/monsite/pdfs/gilliam1701.pdf) without some features.
@@ -31,14 +31,18 @@ It uses `single_lap` iteratively; in each iteration using the transformation est
 the `target` image and then using this warped closer image as the source image in the next iteration, while using progressively smaller
 `filter_half_sizes` to estimate even small and faster varying displacements.
 
+## Note:
+If `display=true` is chosen the function will also return an array of figures demonstrating the
+work of the registration.
+
 See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_imgshowflow`](@ref), [`Flow`](@ref)
 """
-function polyfilter_lap(target::Image,
+function pflap(target::Image,
                         source::Image;
-                        filter_num::Integer=3,
+                        filter_count::Integer=3,
                         max_repeats::Integer=1,
                         display::Bool=true,
-                        timer::TimerOutput=TimerOutput("polyfilter_lap"))
+                        timer::TimerOutput=TimerOutput("pflap"))
 
     @timeit_debug timer "setup" begin
         # convert images to floats
@@ -89,7 +93,7 @@ function polyfilter_lap(target::Image,
 
             for iter_repeat in 1:max_repeats
                 @timeit_debug timer "LAP" begin
-                    Δ_u = single_lap(target, source_reg, filter_half_size, window_size, filter_num, timer=timer)
+                    Δ_u = single_lap(target, source_reg, filter_half_size, window_size, filter_count, timer=timer)
                 end
 
                 # USE INPAINTING TO CORRECT U_EST:
@@ -131,19 +135,41 @@ function polyfilter_lap(target::Image,
         end # "single filter pyramid level"
     end
 
-    # if display; return u_est, source_reg, figs; end
+    if display; return u_est, source_reg, figs; end
     return u_est, source_reg
 end
 
+"""
+    sparse_pflap(args; kwargs)
 
+Find a transformation flow (complex displacment field), that transforms image `source` to closer to image `target`.
+Returns the transformation a [`Flow`](@ref) and the registered `source` image.
+
+# Arguments:
+- `target::Image`: target/fixed grayscale image.
+- `source::Image`: source/moving grayscale image.
+
+# Keyword Arguments:
+- `filter_count::Integer=3`: the number of basis filters used (so far only =3 implemented).
+- `timer::TimerOutput=TimerOutput("sparse pflap")`: provide a timer which times certain blocks in the function.
+- `display::Bool=false`: verbose and debug prints.
+- `point_count::Int=500`: the number of points attempted to be found at the edges of the target image.
+- `spacing::Int=10`: the minimal distance between two points.
+
+## Note:
+If `display=true` is chosen the function will also return an array of figures demonstrating the
+work of the registration.
+
+See also: [`sparse_lap`](@ref), [`pflap`](@ref), [`showflow`](@ref), [`single_lap`](@ref), [`sparse_pflap`](@ref).
+"""
 function sparse_pflap(target::Image,
                       source::Image;
-                      filter_num::Integer=3,
+                      filter_count::Integer=3,
                       max_repeats::Integer=1,
-                      display=true,
-                      point_count::Int=35,
-                      spacing::Int=35,
-                      timer::TimerOutput=TimerOutput("sparse_pflap"))
+                      display::Bool=false,
+                      point_count::Int=500,
+                      spacing::Int=10,
+                      timer::TimerOutput=TimerOutput("sparse pflap"))
 
     @timeit_debug timer "setup" begin
         # convert images to floats
@@ -174,8 +200,8 @@ function sparse_pflap(target::Image,
         half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count))
 
         if display
-            num_plots = 5
-            figs = Array{Figure}(undef, level_count, max_repeats*num_plots)
+            num_plots = 4
+            figs = Array{Figure}(undef, level_count, max_repeats, num_plots)
         end
 
         source_reg = source
@@ -186,7 +212,7 @@ function sparse_pflap(target::Image,
         fhs = 3
         mask[fhs+1:end-fhs, fhs+1:end-fhs] .= true
         @timeit_debug timer "find edge points" begin
-            inds = find_edge_points(target, spacing=spacing, number=point_count, mask=mask)
+            inds = find_edge_points(target, spacing=spacing, point_count=point_count, mask=mask)
         end
         if display
             println("ind count: ", length(inds))
@@ -212,7 +238,7 @@ function sparse_pflap(target::Image,
 
             for iter_repeat in 1:max_repeats
                 @timeit_debug timer "single lap at points" begin
-                    new_estim_at_inds = single_lap_at_points(target, source_reg, fhs, window_size, inds, timer=timer, display=display)
+                    new_estim_at_inds, current_inds = single_lap_at_points(target, source_reg, fhs, window_size, inds, timer=timer, display=display)
                 end
 
                 # interpolate flow
@@ -227,14 +253,15 @@ function sparse_pflap(target::Image,
                         # extract u_est_vecs from the previous estimate and add them to the newly estimated ones
                         # then interpolate a new flow.
                         if display
-                            println("non NaN new estim flow vector count: ", count(!isnan, new_estim_at_inds))
+                            println("non NaN new estim flow vector count: ", length(new_estim_at_inds))
                         end
-                        u_est_at_inds = map(ind -> u_est[ind], inds) .+ new_estim_at_inds
-                        u_est = interpolate_flow(u_est_at_inds, inds, size(u_est))
+                        u_est_at_inds = map(ind -> u_est[ind], current_inds) .+ new_estim_at_inds
+                        @assert any(.!isnan.(u_est_at_inds)) "new estim nans", count(isnan, u_est_at_inds), length(u_est_at_inds)
+                        u_est = interpolate_flow(u_est_at_inds, current_inds, size(u_est))
                     end
                 end
 
-                @assert any(.!isnan.(real(u_est)))
+                @assert any(.!isnan.(u_est)) count(isnan, u_est), length(u_est)
 
                 # linear interpolation
                 @timeit_debug timer "interpolate image" begin
@@ -242,17 +269,15 @@ function sparse_pflap(target::Image,
                 end
 
                 if display
-                    figs[level, 1] = showflow(u_est, figtitle="U_EST (Level: " * string(level) * "/" * string(level_count) * ")")
-                    # figs[level, 2] = showflow(Δ_u, figtitle="Δ_U (Level: " * string(level) * "/" * string(level_count) * ")")
-                    figs[level, 3] = imgshow(source_reg, figtitle="SOURCE_REG (Level: " * string(level) * "/" * string(level_count) * ")")
-                    figs[level, 4] = showflow(create_sparse_flow_from_sparse(new_estim_at_inds, inds, size(u_est)), disp_type=:sparse, figtitle="SPARSE Δ_U (Level: " * string(level) * "/" * string(level_count) * ")")
-                    figs[level, 5] = showflow(create_sparse_flow_from_full(u_est, inds), figtitle="u_est_at_points (Level: " * string(level) * "/" * string(level_count) * ")"); PyPlot.scatter([ind[2] for ind in inds], [ind[1] for ind in inds], marker = :x); gcf()
+                    figs[level, iter_repeat, 1] = showflow(u_est, figtitle="U_EST (Level: " * string(level) * "/" * string(level_count) * ")")
+                    figs[level, iter_repeat, 2] = imgshow(source_reg, figtitle="SOURCE_REG (Level: " * string(level) * "/" * string(level_count) * ")", origin_left_bot=true)
+                    figs[level, iter_repeat, 3] = showflow(create_sparse_flow_from_sparse(new_estim_at_inds, current_inds, size(u_est)), disp_type=:sparse, figtitle="SPARSE Δ_U (Level: " * string(level) * "/" * string(level_count) * ")" * " fhs: $fhs")
+                    figs[level, iter_repeat, 4] = showflow(create_sparse_flow_from_full(u_est, current_inds), figtitle="u_est_at_points (Level: " * string(level) * "/" * string(level_count) * ")" * " fhs: $fhs")
                 end
             end
         end # "single filter pyramid level"
     end
 
-    # here
     if display; return u_est, source_reg, figs; end
     return u_est, source_reg
 end
@@ -260,7 +285,7 @@ end
 
 function sparse_pflap_save(target::Image,
                                   source::Image;
-                                  filter_num::Integer=3,
+                                  filter_count::Integer=3,
                                   max_repeats::Integer=1,
                                   display::Bool=true,
                                   point_count::Int=25,
@@ -319,7 +344,7 @@ function sparse_pflap_save(target::Image,
 
         for iter_repeat in 1:max_repeats
 
-            Δ_u_at_points = single_lap_at_points(target, source_reg, fhs, window_size, inds, filter_num)
+            Δ_u_at_points = single_lap_at_points(target, source_reg, fhs, window_size, inds, filter_count)
 
             Δ_u_interpolated = interpolate_flow(Δ_u_at_points, inds)
 

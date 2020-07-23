@@ -34,7 +34,7 @@ img, imgw, flow = gen_init(:lena, :quad, flow_args=[20])
 TimerOutputs.enable_debug_timings(LAP_julia)
 timer = TimerOutput("Registration");
 @timeit timer "polyfilter lap" begin
-    flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
+    flow_est, source_reg = pflap(img, imgw, display=false, timer=timer)
 end
 print_timer(timer)
 
@@ -72,10 +72,9 @@ img, imgw, flow = gen_init(:lena, :uniform, flow_args=[-1 - 4im, 15]);
 ## SPARSE LAP
 timer=TimerOutput("reg alg: sparse lap");
 method_kwargs = Dict(:timer => timer, :point_count => 200, :spacing => 15)
-method_kwargs = Dict(:timer => timer, :point_count => 35, :spacing => 35, :flow_interpolation_method => :rbf)
+# method_kwargs = Dict(:timer => timer, :point_count => 35, :spacing => 35, :flow_interpolation_method => :rbf)
 flow_est, source_reg, timer, results, (estim_at_inds, inds) = test_registration_alg(sparse_lap, img, imgw, flow, [25, (51,51)], method_kwargs, timer=timer)
 
-errf
 norm_err = normalize_to_zero_one(abs.(err))
 sparse_estim_flow = create_sparse_flow_from_sparse(estim_at_inds, inds, size(flow_est))
 addpoints(inds, labels=map(x -> string(round(x, digits=2)), norm_err))
@@ -86,7 +85,7 @@ ncc(err, vec_len.((map(ind -> flow[ind], inds) .- estim_at_inds)))
 addpoints(inds, labels=map(x -> string(round(x, digits=2)), vec_len.((map(ind -> flow[ind], inds) .- estim_at_inds))))
 
 
-to = timer["reg alg: sparse lap"]["sparse lap"]["prepare A and b"]
+to = timer["reg alg: sparse lap"]["sparse lap"]["filtering"]
 
 TimerOutputs.tottime(to)/10e8
 
@@ -103,6 +102,13 @@ timer=TimerOutput("reg alg: lap");
 flow_est, source_reg, timer, results = test_registration_alg(lap, img, imgw, flow, [25, (51,51)], Dict(:timer => timer), timer=timer);
 
 
+img, imgw = gen_anhir()
+flow_est, source_reg = sparse_pflap(img, imgw)
+showflow(flow_est)
+imgshow(source_reg)
+imgshow(img)
+imgshow(imgw)
+
 sections = ["reg alg: lap", "lap", "calculate flow"];
 TimerOutputs.time(get_timer(old_timer, sections))/TimerOutputs.time(get_timer(new_timer, sections))
 
@@ -112,9 +118,9 @@ showflow(flow)
 ## PF LAP
 timer=TimerOutput("pf lap");
 method_kwargs =Dict(:timer => timer, :display => false, :max_repeats => 1)
-flow_est, source_reg, timer, results = test_registration_alg(polyfilter_lap, img, imgw, flow, [], method_kwargs, timer=timer);
+flow_est, source_reg, timer, results = test_registration_alg(pflap, img, imgw, flow, [], method_kwargs, timer=timer);
 
-@code_warntype polyfilter_lap(img, imgw, display = false)
+@code_warntype pflap(img, imgw, display = false)
 
 showflow(flow_est)
 showflow(flow)
@@ -324,3 +330,177 @@ source_hist = adjust_histogram(source, Matching(targetimg = target))
 @benchmark level_count = floor(Int64, log2(minimum(size(target))/8)+1)+1
 
 @benchmark mask =
+
+using LAP_julia: max_displacement
+
+function foo()
+    for k in 1:120
+        println("iter: ", k)
+        img, imgw = gen_anhir()
+        try
+            flow_est, source_reg = sparse_pflap(img, imgw)
+        catch e
+            println(e)
+            return img, imgw
+        end
+        if max_displacement(flow_est) > 200
+            return img, imgw
+        end
+    end
+    println("all fine")
+end
+
+img, imgw = foo()
+
+img, imgw = gen_anhir()
+
+
+flow = gen_tiled_flow(size(img))
+imgw = warp_img(img, real(flow), imag(flow))
+
+
+imgshow(img, origin_left_bot=true, figtitle="target")
+imgshow(imgw, origin_left_bot=true, figtitle="source")
+
+max_repeats = 3;
+flow_est, source_reg, figs = sparse_pflap(img, imgw, display=true, max_repeats=max_repeats)
+
+using LAP_julia
+assess_flow_quality(flow_est, flow)
+
+
+@manipulate for k in slider(0:max_repeats*size(figs,1), value=1, label="k")
+    if k == 0
+        imgshow(imgw, origin_left_bot=true, figtitle="source")
+    else
+        reshape(permuteddimsview(figs, [2, 1, 3]), (:, 4))[k, 2]
+    end
+end
+
+reshape(figs, (:, 5))
+
+figs[1,1,2]
+
+
+imgshow(source_reg, origin_left_bot=true, figtitle="source_reg")
+imgshow(img, origin_left_bot=true, figtitle="target")
+
+
+for k in 1:120
+    try
+        flow_est, source_reg, figs = sparse_pflap(img, imgw, display=true)
+    catch e
+        println(e)
+        break
+    end
+end
+
+
+img = gen_chess(10,10)
+inds = find_edge_points(img, point_count=150, spacing=8)
+
+imgshow(img); addpoints(inds)
+
+##
+
+a = zeros(Float16, 123,123);
+c = ones(Float16, 5,5);
+@benchmark imfilter(a, c)
+b = zeros(Float64, 123,123);
+d = ones(Float64, 5,5);
+@benchmark imfilter(b, d)
+
+
+
+##
+
+
+
+
+
+
+
+
+
+img, imgw, flow = gen_init()
+
+showflow(flow)
+
+small_img = imresize(img, ratio = 0.5)
+small_imgw = imresize(imgw, ratio = 0.5)
+
+## small version
+@btime small_flow_est, small_source_reg, rest = sparse_lap(small_img, small_imgw, 15, point_count = 500, spacing = 5)
+imgshow(small_source_reg)
+showflow(small_flow_est)
+
+@btime enlarged_small_flow = imresize(small_flow_est, ratio = 2) .* 2
+
+showflow(enlarged_small_flow.-flow)
+
+
+
+
+## normal version
+@btime flow_est, source_reg, rest = sparse_lap(img, imgw, 30)
+imgshow(source_reg)
+showflow(flow_est)
+
+showflow(flow_est.-flow)
+
+
+
+## classic lap
+flow_est_lap, source_reg_lap = lap(img, imgw, 30)
+
+
+showflow(flow_est_lap.-flow)
+
+
+
+
+mutated_flow = imresize(small_flow, ratio = 3/2)
+
+
+showflow(mutated_flow)
+showflow(flow)
+showflow(flow.-mutated_flow)
+
+
+
+##
+using CSV, FileIO
+
+base_path = "/Users/MrTrololord/Documents/anhir/";
+
+loc_table = CSV.read(joinpath(base_path, "location_table.csv"))
+train_rows = loc_table[loc_table[:status] .== "training", :]
+
+random_row = train_rows[rand(1:size(train_rows, 1)), :]
+target_path = random_row[Symbol("Target image")]
+
+img = load(joinpath(base_path, "dataset", target_path))
+imgg = Gray.(img)
+
+imfilter(img, ones(13,13))
+
+eltype(img)
+eltype(imgg)
+
+sizeof(eltype(img))
+sizeof(eltype(imgg))
+
+
+
+##
+target = img
+
+level_count = floor(Int64, log2(minimum((1024,1024))/8)+1)+1
+
+minimum(size(target))/1024
+
+half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count))
+
+1024/8
+
+128/16

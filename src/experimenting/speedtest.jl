@@ -2,7 +2,7 @@ using TimerOutputs
 
 
 """
-    test_registration_alg(args, kwargs)
+    test_registration_alg(args; kwargs)
 
 Test a registration function `reg_fun` by timing it and comparing its outputs to the ground truth `flow` and the `target` image.
 
@@ -25,7 +25,20 @@ Test a registration function `reg_fun` by timing it and comparing its outputs to
 - `results`: Dict with results of the quality of the registration.
 - [`(outputs)`]: other outputs of the `reg_fun` besides `flow_est` and `source_reg`.
 
-See also: [`lap`](@ref), [`sparse_lap`](@ref),[`polyfilter_lap`](@ref), [`sparse_pflap`](@ref), [`Flow`](@ref)
+# Example
+```@example
+# generate a lena image, a warped lena image and a random quadratic flow
+img, imgw, flow = gen_init();
+# setup timer
+timer=TimerOutput("sparse pf lap");
+# choose method params
+method_kwargs = Dict(:timer => timer, :display => false, :max_repeats => 1, :point_count => 500, :spacing => 10)
+# run `sparse_pflap`
+flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow, [], method_kwargs, timer=timer)
+
+```
+
+See also: [`lap`](@ref), [`sparse_lap`](@ref),[`pflap`](@ref), [`sparse_pflap`](@ref), [`Flow`](@ref)
 """
 function test_registration_alg(reg_fun,
                                target::Image,
@@ -47,9 +60,9 @@ function test_registration_alg(reg_fun,
     # get total runtime
     runtime = TimerOutputs.time(timer[timer.name])/10e8
     # test flow quality
-    flow_names_vals_dict = asses_flow_quality(flow, flow_est)
+    flow_names_vals_dict = assess_flow_quality(flow, flow_est)
     # test source_reg quality
-    img_names_vals_dict = asses_source_reg_quality(target, source_reg)
+    img_names_vals_dict = assess_source_reg_quality(target, source_reg)
 
     results = merge(flow_names_vals_dict, img_names_vals_dict)
     results["time"] = runtime

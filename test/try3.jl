@@ -1,5 +1,5 @@
 
-### TEST polyfilter_lap
+### TEST pflap
 
 ## using grid
 
@@ -64,7 +64,7 @@ minimum(filter(!isnan, real(flow)))
 
 ### RUN OPTIFLOW:
 
-u_est, source_reg, figs = polyfilter_lap(img, imgw);
+u_est, source_reg, figs = pflap(img, imgw);
 
 # compare with a single lap:
 u_sin_est = single_lap(img, imgw, 32, [65, 65], 3)

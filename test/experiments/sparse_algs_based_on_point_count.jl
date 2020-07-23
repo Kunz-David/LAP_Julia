@@ -1,58 +1,105 @@
 
 using LAP_julia, TimerOutputs, DataFrames, TableView, JLD2, FileIO
 ##
-sp_lap_win_sum = DataFrame(
+sp_lap_point_count = DataFrame(
     index = Int[],
-    reg_fun = Symbol[],
-    img_size = Int[],
+    diag_size = Int[],
     whs = Int[],
     timer = TimerOutput[],
-    results = Dict{String,Float64}[]);
+    median_results = Dict{String,Float64}[],
+    point_count = Int[],
+    spacing = Int[],
+    points_found = Float16[]
+    );
 
-window_half_sizes = cat(collect(1:51), collect(61:10:101), collect(141:40:381), dims=1);
-img_sizes = [50, 100, 200, 400, 800, 1600];
+window_half_sizes = cat(collect(15:15:51), dims=1)
+diag_sizes = [400, 600, 900, 1200];
+point_counts = vcat(collect(50:150:700), collect(800:300:1550))
+spacings = vcat(5, 15, collect(35:15:40), 50, collect(60:20:155))
 
 ##
-df = sp_lap_win_sum;
+using LAP_julia: fun_on_dict_values, resize_to_diag_size
+using BenchmarkTools
+
+img_count = 5;
+errors = Array{Any}(undef, 0)
+imgs = Array{Image}(undef, 5)
+# prepare images:
+for k in 1:img_count
+    imgs[k], _ = gen_anhir(mutate=false)
+end
+
+imgshow(imgs[2])
+imgshow(resize_to_diag_size(imgs[2], 450))
+size(resize_to_diag_size(imgs[2], 500))
+
+# erase old_results
+df = sp_lap_point_count;
 
 let index = 0
-    for img_size in img_sizes
-        img, imgw, flow = gen_init(:chess, chess_args=[25, img_size/25])
-
-        # limit the max window half size to 1/4 the image
-        whs_limit = img_size/4
-        whs_modified = filter(x -> x <= whs_limit, window_half_sizes)
-
-        for whs in whs_modified
-            for reg_fun in [sparse_lap]
-                window = [whs * 2 + 1, whs * 2 + 1]
-                # window sum 1
+    for diag_size in diag_sizes
+        for whs in window_half_sizes
+            for point_count in point_counts, spacing in spacings
                 timer = TimerOutput("reg alg: sp lap")
-                flow_est, source_reg, timer, results = test_registration_alg(reg_fun, img, imgw, flow, [whs, window], Dict(:timer => timer), timer=timer, display=false)
+                results_dicts = Array{Dict}(undef, img_count)
+                inds_array = Array{Array{Any}}(undef, img_count)
 
-                # repeat with the same timer
-                if whs <= repeat_thresh
-                    for _ in 1:repeat_count
-                        flow_est, source_reg, timer, results = test_registration_alg(reg_fun, img, imgw, flow, [whs, window], Dict(:timer => timer), timer=timer, display=false)
+                for k in 1:img_count
+                    img = resize_to_diag_size(imgs[k], diag_size)
+                    whs_limited = round(Int, min(whs, min(size(img)...)/4))
+                    rand_flow = gen_quad_flow(size(img), whs_limited)
+                    imgw = warp_img(img, real(rand_flow), imag(rand_flow))
+                    try
+                        _, _, timer, results_dicts[k], (_, inds_array[k]) = test_registration_alg(sparse_lap, img, imgw, rand_flow, [whs_limited], Dict(:timer => timer, :point_count => point_count, :spacing => spacing), timer=timer, display=false)
+                        # @assert 1==0
+                    catch e
+                        println(e)
+                        push!(errors, [e, img, imgw, rand_flow, whs_limited])
+                        continue
                     end
                 end
+                # if no data gathered:
+                if any(x-> 0 .== x, length.([results_dicts, inds_array]))
+                    println("SKIPPED: diag_size:", diag_size, " whs: ", whs)
+                    continue
+                end
+
+                median_results = fun_on_dict_values(filter_defined(results_dicts), median)
+                avg_points_found = LAP_julia.mean(map(x -> length(x), filter_defined(inds_array)))
 
                 index = index + 1
-                println("at index: ", index, " img_size:", img_size, " whs: ", whs)
+                println("at index: ", index, " diag_size:", diag_size, " whs: ", whs)
                 push!(df, Dict(:index => index,
-                               :reg_fun => Symbol(reg_fun),
-                               :img_size => img_size,
+                               :diag_size => diag_size,
                                :whs => whs,
                                :timer => timer,
-                               :results => results))
-            end
+                               :median_results => median_results,
+                               :point_count => point_count,
+                               :spacing => spacing,
+                               :points_found => avg_points_found
+                               ))
+            end # point_count in point_counts, spacing in spacings
         end
     end
 end
 
+defined_perms(arraylike) = filter(k -> isassigned(arraylike, k), 1:length(arraylike))
+filter_defined(arraylike) = arraylike[defined_perms(arraylike)]
 
+results_dicts[defined_perms(results_dicts)]
+filter_defined(results_dicts)
 
+errors
 
+results_dicts = Array{Dict}(undef, img_count)
+
+results_dicts[2] = Dict("sd" => 12)
+
+filter(k -> isassigned(results_dicts, k), 1:length(results_dicts))
+
+isassigned(results_dicts, 2)
+
+filter(, results_dicts)
 
 # df
 
@@ -66,21 +113,24 @@ end
 import LAP_julia: sparse_lap
 
 
-show(win_sum3_df[1, :timer])
+win_sum3_df[1, :timer]
 
 
 sections = ["reg alg: sp lap", "sparse lap", "prepare A and b"]
 sections = ["reg alg: sp lap", "sparse lap", "filtering"]
 
 fig, axs = subplots(6, sharex=true, figsize=(10,10))
-for (img_size, ax) in zip(img_sizes[1:end-1], axs)
-    ax.set_title("Image Size: " * string(img_size))
+for (diag_size, ax) in zip(diag_sizes[1:end-1], axs)
+    ax.set_title("Image Size: " * string(diag_size))
 
-    n = count(k -> k < (img_size/4), window_half_sizes)
-    timers3 = df[(df.reg_fun .== :sparse_lap) .& (df.img_size .== img_size), :][:, :timer][1:n]
+    n = count(k -> k < (diag_size/4), window_half_sizes)
+    timers3 = df[(df.reg_fun .== :sparse_lap) .& (df.diag_size .== diag_size), :][:, :timer][1:n]
 
-    y3 = map(x -> get_avg_time(get_timer(x, sections)), timers3)
-    x = filter(x -> x < (img_size/4), window_half_sizes)[1:n]
+    y3 = map(x -> TimerOutputs.time(get_timer(x, sections))/
+                  (TimerOutputs.ncalls(get_timer(x, sections)) * 10e8), timers3)
+    x = filter(x -> x < (diag_size/4), window_half_sizes)[1:n]
+
+    println(length(y3), "  ", length(x))
 
     xscale("log")
     yscale("log")
@@ -91,10 +141,7 @@ for (img_size, ax) in zip(img_sizes[1:end-1], axs)
 end
 gcf()
 
-# get the avg time in seconds for the section in timer
-function get_avg_time(timer)
-    return (TimerOutputs.time(timer)/TimerOutputs.ncalls(timer))/10e8
-end
+
 
 showtable(df)
 

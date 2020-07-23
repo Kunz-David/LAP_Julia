@@ -301,7 +301,7 @@ showflow(flow_est_new)
 showsparseflow(flow_est_new)
 
 
-poly_est, source_reg, figs = polyfilter_lap(img, imgw, display=true)
+poly_est, source_reg, figs = pflap(img, imgw, display=true)
 
 showflow(poly_est, figtitle="classic poly")
 showflow(flow .- poly_est, mag=1, figtitle="difference: classic poly - orig")
@@ -322,7 +322,7 @@ showflow(flow .- poly_point_less_est, mag=2)
 
 #comapare speed:
 @btime poly_point_est, source_point_reg = sparse_pflap(img, imgw, display=false)
-@btime poly_est, source_reg = polyfilter_lap(img, imgw, display=false)
+@btime poly_est, source_reg = pflap(img, imgw, display=false)
 
 
 imgshow(imgw)

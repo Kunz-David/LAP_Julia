@@ -15,6 +15,8 @@ export
     # useful helpers
     mean,
     classic_alg,
+    create_sparse_flow_from_sparse,
+    create_sparse_flow_from_full,
     # data generation
     gen_quad_flow,
     gen_tiled_flow,
@@ -22,13 +24,15 @@ export
     gen_chess,
     gen_init,
     gen_lena,
+    gen_anhir,
+    load_anhir_image_pair,
     # Main LAP funcitons
     lap,
     sparse_lap,
     sparse_lap_win_sum1,
     sparse_pflap,
     single_lap,
-    polyfilter_lap,
+    pflap,
     sparse_pflap,
     single_lap_at_points,
     # Types
@@ -41,7 +45,9 @@ export
     interpolate_flow,
     interpolate_flow_quad,
     #experimenting
-    test_registration_alg
+    test_registration_alg,
+    assess_flow_quality,
+    assess_source_reg_quality
 
 
 """
@@ -71,6 +77,7 @@ include("lap_algs/single.jl")
 include("experimenting/speedtest.jl")
 include("experimenting/qualitytest.jl")
 include("experimenting/visualise.jl")
+include("birl.jl")
 
 
 loaded() = println("LAP_julia succesfully loaded!")

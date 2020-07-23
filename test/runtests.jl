@@ -39,11 +39,11 @@ using CSV
 #     @testset "PFLAP" begin
 #         timer = TimerOutput("Registration");
 #         @timeit timer "polyfilter lap" begin
-#             flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
+#             flow_est, source_reg = pflap(img, imgw, display=false, timer=timer)
 #         end
 #         print_timer(timer)
 #
-#         flow_est, source_reg = polyfilter_lap(img, imgw, display=false)
+#         flow_est, source_reg = pflap(img, imgw, display=false)
 #         showflow(flow)
 #         showflow(flow_est)
 #         @test angle_mae(flow, flow_est) < 10

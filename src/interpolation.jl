@@ -6,7 +6,7 @@ using Interpolations, ColorVectorSpace, ImageFiltering, Images, ScatteredInterpo
 
 Warp the image `img` by `dx` in *x* direction and by `dy` in *y* direction.
 
-`border_strat` indicates how to act when the resulting coordinate outside of bounds of `img`. Values: :replicate, :zeros.
+`border_strat` indicates how to act when the resulting coordinate outside of bounds of `img`. Values: `:replicate`, `:zeros`.
 
 See also: [`showflow`](@ref), [`imgshowflow`](@ref), [`Flow`](@ref)
 """
@@ -30,7 +30,19 @@ end
 meshgrid(x, y) = [repeat(x, outer=length(y)) repeat(y, inner=length(x))]
 meshgrid(x::Real, y::Real) = [repeat(1:x, outer=y) repeat(1:y, inner=x)]
 
-# TODO add docs
+"""
+interpolate_flow(flow_at_inds,
+                 inds::Array{CartesianIndex, 1},
+                 flow_size;
+                 method::Symbol=:quad,
+                 kwargs=Dict())
+
+Interpolate a complex dispalcment field of size `flow_size` from an array of displacement vectors `flow_at_inds`, that are at the locations `inds`.
+You can choose between two methods `method=:quad` which fits the displacement vectors into a global quadratic displacement field
+and `method=:rbf` which uses an rbf model. Additional keyword arguments of the chosen method can be passed as `kwargs`.
+
+See also: [`Flow`](@ref), [`interpolate_flow_quad`](@ref), [`interpolate_flow_rbf`](@ref)
+"""
 function interpolate_flow(flow_at_inds,
                           inds::Array{CartesianIndex, 1},
                           flow_size;
@@ -48,9 +60,13 @@ end
 
 #TODO edit docs
 """
-    interpolate_flow_rbf(flow::Flow, inds::Array{CartesianIndex, 1}, method::T=Multiquadratic(2)) where {T <: ScatteredInterpolation.RadialBasisFunction}
+    interpolate_flow_rbf(flow_at_inds,
+                         inds::Array{CartesianIndex, 1},
+                         flow_size,
+                         rbf_method::T=Multiquadratic(2)) where {T <: ScatteredInterpolation.RadialBasisFunction}
 
-Interpolate a flow using the a Multiquadratic RBF with the parameter `ε` and using only the values at `inds` for the interpolation.
+Interpolate a complex displacement field of size `flow_size` from displacement vectors `flow_at_inds` at `inds`
+using the a Multiquadratic RBF model with the parameter `ε` and using only the values at `inds` for the interpolation.
 
 # Examples of `method` from ScatteredInterpolation:
 Multiquadratic(ɛ = 1)
@@ -65,7 +81,7 @@ Polyharmonic(k = 1)
 ```
 (See ScatteredInterpolation for more.)
 
-See also: [`showflow`](@ref), [`Flow`](@ref)
+See also: [`showflow`](@ref), [`Flow`](@ref), [`interpolate_flow`](@ref), [`interpolate_flow_quad`](@ref)
 """
 function interpolate_flow_rbf(flow_at_inds,
                               inds::Array{CartesianIndex, 1},
@@ -85,7 +101,27 @@ function interpolate_flow_rbf(flow_at_inds,
     return gridded
 end
 
+"""
+    interpolate_flow_quad(flow_at_inds, inds, flow_size)
 
+Interpolate a complex displacement field of size `flow_size` from displacement vectors `flow_at_inds` at `inds`
+using a global quadratic model.
+
+The fit to this model is made by minimizing the following:
+
+```math
+\\min_{a_{k}} \\sum_{x, y ∈ \\mathrm{inds}}\\left|u_{\\mathrm{quad}}(x, y)-u_{\\mathrm{flow\\_at\\_inds}}(x, y)\\right|^{2}
+```,
+
+where:
+
+```math
+u_{\\mathrm{quad}}(x, y) = a_1 + a_2x + a_3y + a_4x^2 + a_5y^2 + a_6xy
+```
+
+
+See also: [`showflow`](@ref), [`Flow`](@ref), [`interpolate_flow`](@ref), [`interpolate_flow_rbf`](@ref)
+"""
 function interpolate_flow_quad(flow_at_inds, inds, flow_size)
     A = make_A(inds)
     coeffs = A\flow_at_inds
@@ -106,7 +142,7 @@ function make_flow2(coeffs, flow_size)
     transpose(flow) .+= (ys .* coeffs[3])
     flow .+= ((xs.^2) .* coeffs[4])
     transpose(flow) .+= ((ys.^2) .* coeffs[5])
-    flow .+= ((xs' .* ys) .* coeffs[6])
+    flow .+= ((repeat(xs, 1, flow_size[2]) .* ys') .* coeffs[6])
     return flow
 end
 

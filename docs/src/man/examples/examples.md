@@ -242,9 +242,9 @@ nothing # hide
 
 
 
-# `polyfilter_lap` function
+# `pflap` function
 
-Here are examples of using the [`polyfilter_lap`](@ref) function to find the flow between the original and the warped image.
+Here are examples of using the [`pflap`](@ref) function to find the flow between the original and the warped image.
 I will show the results of the algorithm for an image warped by a uniform flow and a smoothly varying flow. (The code running is the same.)
 
 ## Uniform Flow
@@ -257,10 +257,10 @@ Run:
 filter_half_size = 20
 window_size = [2*filter_half_size + 1, 2*filter_half_size + 1]
 
-estim_flow, source_reg = polyfilter_lap(chess, chess_uni_warped, display=false)
+estim_flow, source_reg = pflap(chess, chess_uni_warped, display=false)
 nothing # hide
 ```
-*Check out [`polyfilter_lap`](@ref).*
+*Check out [`pflap`](@ref).*
 
 Check the results:
 ```@example uniform
@@ -281,10 +281,10 @@ Run:
 filter_half_size = 20
 window_size = [2*filter_half_size + 1, 2*filter_half_size + 1]
 
-estim_flow, source_reg = polyfilter_lap(lena, lena_uni_warped, display=false)
+estim_flow, source_reg = pflap(lena, lena_uni_warped, display=false)
 nothing # hide
 ```
-*Check out [`polyfilter_lap`](@ref).*
+*Check out [`pflap`](@ref).*
 
 Check the results:
 ```@example uniform
@@ -309,7 +309,7 @@ This how the algorithm performs on a non-uniform smooth flow.
 ### Chessboard
 Run:
 ```@example smooth
-estim_flow, source_reg = polyfilter_lap(chess, chess_smooth_warped, display=false)
+estim_flow, source_reg = pflap(chess, chess_smooth_warped, display=false)
 nothing # hide
 ```
 
@@ -332,7 +332,7 @@ Run:
 filter_half_size = 20
 window_size = [2*filter_half_size + 1, 2*filter_half_size + 1]
 
-estim_flow, source_reg = polyfilter_lap(lena, lena_smooth_warped, display=false)
+estim_flow, source_reg = pflap(lena, lena_smooth_warped, display=false)
 nothing # hide
 ```
 

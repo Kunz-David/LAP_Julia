@@ -95,12 +95,12 @@ function window_sum3!(result, pixels, img_size, window)
     @views summed[:, -w] .= 0
 
     summed = cumsum2d!(summed, summed)
-    c = img_size[1]
+    (c, d) = img_size
 
-    reshape(result, img_size) .= view(summed, (1+w):(w+c), (1+w):(w+c)) .-
-                                 view(summed, (1+w):(w+c), (-w):(c-w-1)) .-
-                                 view(summed, (-w):(c-w-1), (1+w):(w+c)) .+
-                                 view(summed, (-w):(c-w-1), (-w):(c-w-1))
+    reshape(result, img_size) .= view(summed, (1+w):(w+c), (1+w):(w+d)) .-
+                                 view(summed, (1+w):(w+c), (-w):(d-w-1)) .-
+                                 view(summed, (-w):(c-w-1), (1+w):(w+d)) .+
+                                 view(summed, (-w):(c-w-1), (-w):(d-w-1))
     return result
 end
 

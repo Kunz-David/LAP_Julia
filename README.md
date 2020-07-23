@@ -32,7 +32,7 @@ obrazku v Julii pomalejsi nez `imfilter` v Matlabu, s tim nic moc neudelam, muzu
 - Zrychlil jsem implementaci obou sparse metod: `sparse_pflap` a `sparse_lap` a pridal jsem _fitovani na globalni kvadraticky model_.
   - Obe vyber fitovani a dalsich paramatru spusteni je v dokumentaci.
   - Fitovani na kvadraticky model je rychle a pro konstantni displacement pole je presnejsi nez PF-LAP viz priklad.
-- pridano nekolik testovacich funkci `test_registration_alg`, `asses_flow_quality` ...
+- pridano nekolik testovacich funkci `test_registration_alg`, `assess_flow_quality` ...
 - nekolik experimentu: viz `test/experiments/...`
   - mezi residualem linearnich rovnic LAP metody a chybou odhadu posunu je korelace - prumerna `Normalized Cross-correlation(ncc)` = `0.22` (v experimentu je histogram rozlozeni) - nevim jak toho vyuzit zatim, musi se to docela narocne zpetne spocitat.
 - snazim se zprovoznit benchmark BIRL pro moje methody.
@@ -93,7 +93,7 @@ __pflap__:
 ```julia
 timer=TimerOutput("pf lap");
 method_kwargs =Dict(:timer => timer, :display => false, :max_repeats => 1)
-flow_est, source_reg, timer, results = test_registration_alg(polyfilter_lap, img, imgw, flow, [], method_kwargs, timer=timer);
+flow_est, source_reg, timer, results = test_registration_alg(pflap, img, imgw, flow, [], method_kwargs, timer=timer);
 ```
 
 _pflap_ - rychlost:
@@ -174,7 +174,7 @@ using TimerOutputs, LAP_julia
 TimerOutputs.enable_debug_timings(LAP_julia)
 timer = TimerOutput("Registration");
 @timeit timer "polyfilter lap" begin
-    flow_est, source_reg = polyfilter_lap(img, imgw, display=false, timer=timer)
+    flow_est, source_reg = pflap(img, imgw, display=false, timer=timer)
 end
 print_timer(timer)
 ```
@@ -203,14 +203,14 @@ print_timer(timer)
 
 - Metody registrace:
   - Funkce `single_lap` z paperu funguje dle ocekavani. (viz dokumentace)
-  - Funkce `polyfilter_lap` z paperu funguje dle ocekavani. (viz dokumentace)
+  - Funkce `pflap` z paperu funguje dle ocekavani. (viz dokumentace)
   - Funkce `single_lap_at_points`
     - funguje dobre -> na obrazek 256x256, 25 klicovych bodu, deformovan pomalu se menici deformaci a s malym maximalnim posunutim,
     je cca 6x rychlejsi nez single_lap a podobne presna, pokud jsou body dobre distribuovane.
     - spolecne s vyberem bodu a interpolaci s `interpolate_flow` je to cele 5x rychlejsi. Dole pridavam kod na vyzkouseni.
     - je potreba zjistit za jakych podminek to funguje nejlepe. Udelat nejake testy??
     - je potreba dodelat dokumentaci.
-  - Funkce `sparse_pflap` je zatim stejne rychla jako `polyfilter_lap` a je o neco nepresnejsi
+  - Funkce `sparse_pflap` je zatim stejne rychla jako `pflap` a je o neco nepresnejsi
 
 - Interpolace/fitovani globalni deformace:
   - je implementovano pomoci RBF interpolace ve funkci `interpolate_flow`.
@@ -218,7 +218,7 @@ print_timer(timer)
 
 - Dokumentace:
   - obsahuje dokumentace vsech vyznamnych public funkci a vetsinu privatnich, krom single_lap_at_points.
-  - obsahuje navod na volani metod `polyfilter_lap` a `single_lap`, jejich porovnani a ukazky vystupu.
+  - obsahuje navod na volani metod `pflap` a `single_lap`, jejich porovnani a ukazky vystupu.
   - je potreba dodelat Examples do hezci formy.
   - chtel bych jeste pridat nejake lepsi porovnani vysledku metody a originalu, asi by stacilo neco jako `showflow(orig .- estim)`
 

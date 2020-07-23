@@ -20,17 +20,17 @@ function pad_images(image1::Image, image2::Image)
     end
 
     if (a < c)
-        image1 = [image1; zeros(c - a, b)];
+        image1 = [image1; ones(c - a, b)];
         a = c
     elseif (a > c)
-        image2 = [image2; zeros(a - c, d)];
+        image2 = [image2; ones(a - c, d)];
         c = a
     end
 
     if (b < d)
-        image1 = [image1 zeros(a, d - b)];
+        image1 = [image1 ones(a, d - b)];
     elseif (b > d)
-        image2 = [image2 zeros(c, b - d)];
+        image2 = [image2 ones(c, b - d)];
     end
     return image1, image2
 end
@@ -272,8 +272,8 @@ function sparse_lap(target,
                     source,
                     fhs,
                     window_size=(2fhs+1, 2fhs+1);
-                    spacing::Integer=25,
-                    point_count::Integer=100,
+                    spacing::Integer=15,
+                    point_count::Integer=200,
                     timer::TimerOutput=TimerOutput("sparse_lap"),
                     display::Bool=false,
                     flow_interpolation_method::Symbol=:quad,
@@ -281,10 +281,10 @@ function sparse_lap(target,
 
     mask = parent(padarray(trues(size(target).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
     @timeit_debug timer "find edge points" begin
-        inds = find_edge_points(target, spacing=spacing, number=point_count, mask=mask)
+        inds = find_edge_points(target, spacing=spacing, point_count=point_count, mask=mask)
     end
     @timeit_debug timer "sparse lap" begin
-        flow_estim_at_inds = single_lap_at_points(target, source, fhs, window_size, inds; base_method_kwargs...)
+        flow_estim_at_inds, inds = single_lap_at_points(target, source, fhs, window_size, inds; base_method_kwargs...)
     end
     if all(isnan, flow_estim_at_inds)
         @timeit_debug timer "interpolate flow" begin

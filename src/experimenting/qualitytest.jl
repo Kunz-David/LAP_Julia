@@ -2,13 +2,13 @@ using TimerOutputs, BenchmarkTools
 
 
 """
-    asses_source_reg_quality(target, source_reg; title="", display::Bool=true)
+    assess_source_reg_quality(target, source_reg; title="", display::Bool=true)
 
 Run a few tests on comparing `target` and `source_reg`.
 
 Tests: [`ncc`, `mae`, `rmse`, `mse`]
 """
-function asses_source_reg_quality(target, source_reg; title="", display::Bool=true)
+function assess_source_reg_quality(target, source_reg; title="", display::Bool=true)
     functions = [ncc, mae, rmse, mse]
     names_short = ["ncc", "mae", "rmse", "mse"]
     vals = map(x -> x(target, source_reg), functions)
@@ -17,13 +17,13 @@ function asses_source_reg_quality(target, source_reg; title="", display::Bool=tr
 end
 
 """
-    asses_flow_quality(flow, flow_est; title="", display::Bool=true)
+    assess_flow_quality(flow, flow_est; title="", display::Bool=true)
 
 Run a few tests on comparing `flow_est` and `flow`.
 
 Tests: [`angle_mae`, `angle_rmse`, `mae`, `mse`]
 """
-function asses_flow_quality(flow, flow_est; title="", display::Bool=true)
+function assess_flow_quality(flow, flow_est; title="", display::Bool=true)
     functions = [angle_mae, angle_rmse, mae, mse]
     names_short = ["angle-mae", "angle-rmse", "flow_mae", "flow_rmse"]
     # names = ["angle mean absolute error", "angle root mean squared error", "mean absolute error", "root mean squared error"]

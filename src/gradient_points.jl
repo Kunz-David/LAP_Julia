@@ -19,16 +19,16 @@ function gradient_magnitude(f)
 end
 
 """
-    find_edge_points(img::Image; spacing::Int=35, number::Int=35, sigma=1, mask::BitArray{2}=BitArray{2}(undef, 0,0))
+    find_edge_points(img::Image; spacing::Int=35, point_count::Int=35, sigma=1, mask::BitArray{2}=BitArray{2}(undef, 0,0))
 
-Greadily locate `number` of points in `img` with the highest gradient magnitude. These points have will be atleast `spacing`
+Greadily locate `point_count` of points in `img` with the highest gradient magnitude. These points have will be atleast `spacing`
 pixels appart, they are returned as an array of `CartesianIndex`. A `mask` can be used to exclude some parts of `img` from the search.
 
 Note: `sigma` is the gaussian filter used to smooth `img` before looking for gradients.
 """
 function find_edge_points(img::Image;
                           spacing::Int=35,
-                          number::Int=35,
+                          point_count::Int=35,
                           sigma=1,
                           mask::BitArray{2}=BitArray{2}(undef, 0,0))
 
@@ -50,17 +50,17 @@ function find_edge_points(img::Image;
     end
 
     N = 2
-    permutation_array = sortperm(reshape(mag,length(mag)), alg=PartialQuickSort(2*number*spacing^(N-1)),rev=true) # check here
+    permutation_array = sortperm(reshape(mag,length(mag)), alg=PartialQuickSort(2*point_count*spacing^(N-1)),rev=true) # check here
 
     image_inds = CartesianIndices(size(mag))
 
-    numkpts = 0 # number of keypoints found so far
-    kpts = Array{CartesianIndex}(undef, number)
+    numkpts = 0 # point_count of keypoints found so far
+    kpts = Array{CartesianIndex}(undef, point_count)
 
     # go through indices from the largest gradient
     for perm in permutation_array
 
-        if numkpts >= number break; end
+        if numkpts >= point_count break; end
         if mag[perm] == marker continue; end
 
         # @assert(mag[perm] > 10 * eps(Float64))
@@ -77,7 +77,7 @@ function find_edge_points(img::Image;
         fill_circle!(mag, ppos, spacing, marker)
     end # for
 
-    if numkpts < number # shrink array if less keypoints were found
+    if numkpts < point_count # shrink array if less keypoints were found
         resize!(kpts, numkpts)
     end
     return kpts
@@ -101,7 +101,7 @@ function fill_circle!(mag, pos, spacing, marker)
 end
 
 
-# function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, number::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
+# function find_keypoints_from_gradients_p_field(f::Array{T, 2}; spacing=25, point_count::Int=100, sigma=ones(Float64,2), nlength=1., mask=[]) where {T}
 #
 #     # calculate gradient mag
 #     grad, mag = gradient_magnitude(ImageFiltering.imfilter(f, ImageFiltering.Kernel.gaussian(sigma)))
@@ -123,9 +123,9 @@ end
 #     end
 #     # sort indices by decreasing mag
 #
-#     kpts = Array{SimpleKeypoint}(undef, number)
+#     kpts = Array{SimpleKeypoint}(undef, point_count)
 #     # go through indices from the largest gradient and put each
-#     for k in 1:number
+#     for k in 1:point_count
 #
 #         ind = wsample(Array(1:length(mag)), mag[:])
 #

@@ -2,7 +2,7 @@ module lap
 
 using TimerOutputs
 
-export polyfilter_lap, single_lap,
+export pflap, single_lap,
        sparse_pflap, single_lap_at_points
 
 include("lap_algs/helpers.jl")

@@ -114,7 +114,7 @@ print_timer()
 
 img, imgw, flow = gen_init()
 
-u_est, source_reg = polyfilter_lap(img, imgw, display=false);
+u_est, source_reg = pflap(img, imgw, display=false);
 
 showflow(flow)
 showflow(u_est)
@@ -122,7 +122,7 @@ imgshow(source_reg)
 imgshow(img)
 
 
-@profiler polyfilter_lap(img, imgw, display=false);
+@profiler pflap(img, imgw, display=false);
 
 ## single lap
 
