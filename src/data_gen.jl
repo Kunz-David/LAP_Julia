@@ -1,7 +1,15 @@
 using TestImages: testimage
 using CSV, FileIO, Images, Colors
 
+"""
+    gen_anhir(base_path = "/Users/MrTrololord/Documents/anhir/";
+              mutate=true,
+              diag_pixels=500)
 
+Generate a random ANHIR image pair `target` and `source` images (in this order) from the ANHIR dataset at `base_path`.
+
+See also: [`load_anhir_image_pair`](@ref)
+"""
 function gen_anhir(base_path = "/Users/MrTrololord/Documents/anhir/";
                    mutate=true,
                    diag_pixels=500)
@@ -28,6 +36,13 @@ function gen_anhir(base_path = "/Users/MrTrololord/Documents/anhir/";
     return target, source
 end
 
+"""
+    resize_to_diag_size(img, desired_diag_size)
+
+Resize `img` so that it has `desired_diag_size` pixels on its diagonal.
+
+See also: [`gen_anhir`](@ref), [`load_anhir_image_pair`](@ref)
+"""
 function resize_to_diag_size(img, desired_diag_size)
     actual_diag_pixels = sqrt(sum((size(img).^2)))
     resize_ratio = desired_diag_size/actual_diag_pixels
@@ -35,6 +50,15 @@ function resize_to_diag_size(img, desired_diag_size)
     return img
 end
 
+"""
+    load_anhir_image_pair(target_path,
+                          source_path;
+                          base_path = "/Users/MrTrololord/Documents/anhir/dataset")
+
+Load an image pair in the locations `target_path` and `source_path` from the location `base_path`.
+
+See also: [`gen_anhir`](@ref)
+"""
 function load_anhir_image_pair(target_path,
                                source_path;
                                base_path = "/Users/MrTrololord/Documents/anhir/dataset")
@@ -194,6 +218,8 @@ Create the usual testing data; img, imgw, flow.
 # Arguments
 - `img_type::Symbol=:lena`: what base image is used. [Options: `:lena`, `:chess`]
 - `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`]
+
+# Keyword Arguments
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
 - `chess_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
 

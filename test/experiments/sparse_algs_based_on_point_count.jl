@@ -33,6 +33,8 @@ imgshow(imgs[2])
 imgshow(resize_to_diag_size(imgs[2], 450))
 size(resize_to_diag_size(imgs[2], 500))
 
+total_iterations = sum(broadcast(*, length.([window_half_sizes, diag_sizes, point_counts, spacings])...)) * img_count
+
 # erase old_results
 df = sp_lap_point_count;
 
@@ -50,8 +52,10 @@ let index = 0
                     rand_flow = gen_quad_flow(size(img), whs_limited)
                     imgw = warp_img(img, real(rand_flow), imag(rand_flow))
                     try
-                        _, _, timer, results_dicts[k], (_, inds_array[k]) = test_registration_alg(sparse_lap, img, imgw, rand_flow, [whs_limited], Dict(:timer => timer, :point_count => point_count, :spacing => spacing), timer=timer, display=false)
-                        # @assert 1==0
+                        # run registration function
+                        _, _, timer, results_dicts[k], (_, inds_array[k]) = test_registration_alg(sparse_lap,
+                            img, imgw, rand_flow, [whs_limited], Dict(:timer => timer, :point_count =>
+                                point_count, :spacing => spacing), timer=timer, display=false)
                     catch e
                         println(e)
                         push!(errors, [e, img, imgw, rand_flow, whs_limited])
@@ -68,7 +72,7 @@ let index = 0
                 avg_points_found = LAP_julia.mean(map(x -> length(x), filter_defined(inds_array)))
 
                 index = index + 1
-                println("at index: ", index, " diag_size:", diag_size, " whs: ", whs)
+                println("at index: ", index, " (of $total_iterations", " diag_size: ", diag_size, " whs: ", whs)
                 push!(df, Dict(:index => index,
                                :diag_size => diag_size,
                                :whs => whs,

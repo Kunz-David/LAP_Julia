@@ -20,7 +20,11 @@ rc("savefig", dpi=400)
 rc("image", origin="lower")
 # rcdefaults()
 
-# TODO: add docs
+"""
+    addpoints(inds; ret::Symbol=:figure, labels=[])
+
+Add points to a plot at the locations `inds` optionaly provide `labels`.
+"""
 function addpoints(inds; ret::Symbol=:figure, labels=[])
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
@@ -38,7 +42,13 @@ function addpoints(inds; ret::Symbol=:figure, labels=[])
     end
 end
 
-# TODO: add docs
+"""
+    imgoverlay(img1, img2; fig=nothing, figtitle::String="Image overlay", ret::Symbol=:figure)
+
+Show an overlay of the images `img1` and `img2`, each in a different colors, to better see the differences between them.
+
+See also: [`imgshow`](@ref)
+"""
 function imgoverlay(img1, img2; fig=nothing, figtitle::String="Image overlay", ret::Symbol=:figure)
 
     if fig == nothing

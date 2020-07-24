@@ -96,17 +96,6 @@ function get_avg_time(timer)
     return (TimerOutputs.time(timer)/TimerOutputs.ncalls(timer))/10e8
 end
 
-showtable(df)
-
-TimerOutputs.time(get_timer(win_sum3_df[:, :timer][1], ["reg alg: sp lap", "sparse lap", "prepare A and b"]))
-TimerOutputs.tottime(get_timer(win_sum3_df[:, :timer][1], ["reg alg: sp lap", "sparse lap", "prepare A and b"]))
-TimerOutputs.tottime(get_timer(win_sum3_df[:, :timer][1], ["reg alg: sp lap", "interpolate flow"]))
-TimerOutputs.time(win_sum3_df[:, :timer][1]["reg alg: sp lap"]["interpolate flow"])
-
-
-print_timer(win_sum3_df[:, :timer][1])
-
-
 function get_timer(timer, sections)
     private_sections = copy(sections)
     try
