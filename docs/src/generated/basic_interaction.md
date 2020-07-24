@@ -2,7 +2,7 @@
 EditURL = "<unknown>/docs/src/man/examples/basic_interaction.jl"
 ```
 
-# Basic interaction
+# Basic Interaction
 
 [![](https://mybinder.org/badge_logo.svg)](<unknown>/generated/basic_interaction.ipynb)
 [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](<unknown>/generated/basic_interaction.ipynb)
@@ -29,25 +29,25 @@ See also: [`gen_chess`](@ref), [`gen_quad_flow`](@ref), [`gen_quad_flow`](@ref),
 ## Next we would like to display these generated images and flows
 For that we will use the [`imgshow`](@ref), [`showflow`](@ref) and [`imgoverlay`](@ref) functions.
 
-# to see a single image
+See a single image:
 
 ```@example basic_interaction
 imgshow(img)
 ```
 
-# to see the default random flow
+See the default random flow:
 
 ```@example basic_interaction
 showflow(flow)
 ```
 
-# to see the uniform flow
+See the uniform flow:
 
 ```@example basic_interaction
 showflow(flow_uniform)
 ```
 
-# to see the differences between 2 images
+See the differences between 2 images:
 
 ```@example basic_interaction
 imgoverlay(img, imgw)

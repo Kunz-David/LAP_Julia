@@ -100,7 +100,7 @@ The constants `a`, `b` and `c` are random numbers from the normal distribution w
 
 See also: [`showflow`](@ref), [`gen_tiled_flow`](@ref), [`Flow`](@ref)
 """
-function gen_quad_flow(img_size, max_magnitude=15)
+function gen_quad_flow(img_size, max_magnitude=10)
 
     a, b, c = randn(), randn(), randn()
     f(z) = a + b*z + c*z^2
@@ -155,7 +155,7 @@ It works by generating a tiled flow where each tile has a random uniform flow. T
 See also: [`showflow`](@ref), [`Flow`](@ref), [`gen_chess`](@ref), [`gen_quad_flow`](@ref)
 """
 function gen_tiled_flow(flow_size::Tuple{T, T}=(200, 200),
-                        max_magnitude::Real=15,
+                        max_magnitude::Real=10,
                         tile_size=nothing,
                         filter_amp=nothing)::Flow where {T <: Integer}
 
