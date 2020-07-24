@@ -1,6 +1,7 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 LAP_julia = "797d5b5c-2e9a-429f-9c9f-727808915e33"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 
 [compat]
 Documenter = "0.24"
