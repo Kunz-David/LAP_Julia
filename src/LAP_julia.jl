@@ -25,6 +25,7 @@ export
     gen_init,
     gen_lena,
     gen_anhir,
+    gen_spaghetti,
     load_anhir_image_pair,
     # Main LAP funcitons
     lap,

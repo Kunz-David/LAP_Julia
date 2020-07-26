@@ -1,4 +1,4 @@
-# Public Documentation
+# [Public Documentation](@id public_api)
 
 Documentation for `LAP_julia.jl`'s public interface.
 

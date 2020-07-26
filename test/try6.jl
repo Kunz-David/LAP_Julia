@@ -127,12 +127,11 @@ showflow(flow)
 showflow(flow - flow_est, figtitle="flow - old flow")
 ## SPARSE PF LAP
 img, imgw, flow = gen_init();
-img, imgw, flow = gen_init(:lena, :uniform, flow_args=[-1 - 4im, 15]);
+img, imgw, flow = gen_init(:spaghetti, :uniform, flow_args=[-1 - 4im, 15]);
 
 timer=TimerOutput("sparse pf lap");
 method_kwargs = Dict(:timer => timer, :display => false, :max_repeats => 1, :point_count => 500, :spacing => 10)
-flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow, [], method_kwargs, timer=timer)
-
+flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow, method_kwargs=method_kwargs, timer=timer)
 
 showflow(flow_est)
 showflow(flow)
@@ -141,6 +140,7 @@ showflow(flow-flow_est)
 imgoverlay(img, source_reg)
 imgshow(img - source_reg)
 imgshow(img)
+imgshow(imgw)
 imgshow(source_reg)
 
 
@@ -504,3 +504,73 @@ half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count)
 1024/8
 
 128/16
+
+
+
+## optable
+
+macro optable(expr)
+    if expr.args[1] == :(=>) && expr.args[2] isa Int
+        n = expr.args[2]
+        nexpr = expr.args[3]
+        name = string(nexpr.args[1])
+        descr = string(nexpr)
+        :(optable($(esc(nexpr)), $name, $descr, $n))
+    elseif expr.args[1] == :(=>) && expr.args[2] isa String
+        name = expr.args[2]
+        nexpr = expr.args[3]
+        descr = string(nexpr)
+        :(optable($(esc(nexpr)), $name, $descr))
+    else
+        name = string(expr.args[1])
+        descr = string(expr)
+        :(optable($(esc(expr)), $name, $descr))
+    end
+end
+
+function optable(op, name, descr)
+    fname = joinpath("..", "assets", string(name, ".png"))
+    i = 2
+    while isfile(fname)
+        fname = joinpath("..", "assets", string(name, i, ".png"))
+        i = i + 1
+    end
+    out = augment(pattern, op)
+    save(fname, out)
+    header = length(descr) < 20 ? "Output for `$descr`" : "`$descr`"
+    tbl = string(
+        "Input | $header\n",
+        "------|--------\n",
+        "![input](../assets/testpattern.png) | ![output]($fname)\n"
+    )
+    Markdown.parse(tbl)
+end
+
+function optable(img1, img2, basename1, basename2, descr1, descr2)
+    # save fig 1 as next in line
+    imgshow(img1); i = 1;
+    fname1 = joinpath("..", "..", @__DIR__, "assets", string(basename1, i, ".png"))
+    while isfile(fname1)
+        i = i + 1
+        fname1 = joinpath("..", "..", @__DIR__, "assets", string(basename1, i, ".png"))
+    end
+    savefig(fname1)
+    # save fig 2 as next in line
+    imgshow(img2); j = 1;
+    fname2 = joinpath("..", "..", @__DIR__, "assets", string(basename2, j, ".png"))
+    while isfile(fname2)
+        i = i + 1
+        fname2 = joinpath("..", "..", @__DIR__, "assets", string(basename2, j, ".png"))
+    end
+    savefig(fname2)
+    tbl = string(
+        "$descr1 | $descr2\n",
+        "------|--------\n",
+        "![input]($fname1) | ![output]($fname2)\n"
+    )
+    Markdown.parse(tbl)
+end
+
+
+
+optable(img, imgw, "img", "imgw", "target", "source")

@@ -209,14 +209,12 @@ function lap(target::Image,
     end
     @timeit_debug timer "inpainting" begin
         @timeit_debug timer "replicating borders" begin
-            println("Nan count: ", count(isnan, flow_estim))
             window_half_size = Int64.((window_size.-(1,1))./2)
             middle_vals = flow_estim[window_half_size[1]+1:end-window_half_size[1],
                               window_half_size[2]+1:end-window_half_size[2]]
             flow_estim = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
         end # "replication borders"
         @timeit_debug timer "inside" begin
-            println("Nan count: ", count(isnan, flow_estim))
             inpaint_nans!(flow_estim)
         end # "inside"
     end
@@ -300,42 +298,3 @@ function sparse_lap(target,
     end
     return full_flow_estim, source_reg, flow_estim_at_inds, inds
 end
-
-
-function sparse_lap_win_sum1(img,
-                             imgw,
-                             fhs,
-                             window_size;
-                             spacing::Integer=35,
-                             point_count::Integer=35,
-                             timer::TimerOutput=TimerOutput("sparse_lap"))
-    mask = parent(padarray(trues(size(img).-(2*fhs, 2*fhs)), Fill(false, (fhs, fhs), (fhs, fhs))))
-    @timeit_debug timer "find edge points" begin
-        inds = find_edge_points(img, spacing=spacing, number=point_count, mask=mask)
-    end
-    @timeit_debug timer "sparse lap" begin
-        new_estim = single_lap_at_points_win_sum1(img, imgw, fhs, window_size, inds, 3, timer=timer)
-    end
-    if all(isnan, [new_estim[ind] for ind in inds])
-        @timeit_debug timer "interpolate flow" begin
-            full_flow_estim = zeros(size(new_estim)) .* im .+ zeros(size(new_estim))
-        end
-    else
-        @timeit_debug timer "interpolate flow" begin
-            full_flow_estim = interpolate_flow(new_estim, inds)
-        end
-    end
-    @timeit_debug timer "generate source_reg" begin
-        source_reg = warp_img(imgw, -rea(full_flow_estim), imag(full_flow_estim))
-    end
-    return full_flow_estim, source_reg
-end
-
-
-# function maxim(a)
-#     maximum(x->isnan(x) ? -Inf : x, a)
-# end
-#
-# function minim(a)
-#     minimum(x->isnan(x) ? +Inf : x, a)
-# end

@@ -1,5 +1,117 @@
 using TestImages: testimage
-using CSV, FileIO, Images, Colors
+using CSV, FileIO, Images, Colors, Augmentor
+
+
+
+"""
+    spaghetti_fun(x, y, a, b, τ, len)
+
+Gives the intensity for a single "spaghetti" at (`x`, `y`) with the params `a`, `b`, `τ` and `len`.
+
+The intensity is equal to:
+```math
+I(\\mathrm{x,y})=\\left(1-\\frac{f(\\mathrm{x, y})}{τ^{2}}\\right)\\left(1+\\mathrm{e}
+^{\\left(\\left(\\mathrm{x}^2 +\\mathrm{y}^2 \\right) -\\mathrm{len}^{2}\\right) /\\left(50 τ^{2}
+\\right)}\\right)^{-1} \\mathrm{e}^{-f(\\mathrm{x, y}) /\\left(2 τ^{2}\\right)}
+```
+where
+```math
+f(\\mathrm{x, y})=\\left|y-a x^{3}-b x\\right|^{2} /\\left(1+\\left|3 a x^{2}-b\\right|^{2}\\right)
+```
+
+See also: [`gen_spaghetti`](@ref), [`gen_one_spaghetti`](@ref), [`gen_spaghetti`](@ref)
+"""
+function spaghetti_fun(x, y, a, b, τ, len)
+    spag(x, y, a, b) = (abs(y - a*x^3 - b*x)^2)/(1 + abs(3a*x^2 - b)^2)
+    args = (x, y, a, b)
+    return (1 - spag(args...)/τ^2) * (1 + exp(((x^2 + y^2) - len)/(50*τ^2)))^(-1) * exp((-spag(args...))/(2*τ^2))
+end
+
+# TODO edit wording
+"""
+    gen_one_spaghetti(img_size, τ, len, spread)
+
+Generate a single spaghetti image with the params `τ` (thickness), `len` (length) and `spread`.
+The coordinates `x` and `y` in the equation are scaled from `(-1, 1)` and the `spread` gives the length of interval
+in which the `(-1, 1)` is randomly located. The genereated spaghetti is also randomly rotated.
+
+(Example for spread 10, the interval for `x` and `y` is randomly anywhere between `(-9:1)` and `(-1:9)`)
+
+The intensity is equal to:
+```math
+I(\\mathrm{x,y})=\\left(1-\\frac{f(\\mathrm{x, y})}{τ^{2}}\\right)\\left(1+\\mathrm{e}
+^{\\left(\\left(\\mathrm{x}^2 +\\mathrm{y}^2 \\right) -\\mathrm{len}^{2}\\right) /\\left(50 τ^{2}
+\\right)}\\right)^{-1} \\mathrm{e}^{-f(\\mathrm{x, y}) /\\left(2 τ^{2}\\right)}
+```
+where
+```math
+f(\\mathrm{x, y})=\\left|y-a x^{3}-b x\\right|^{2} /\\left(1+\\left|3 a x^{2}-b\\right|^{2}\\right)
+```
+`a` and `b` are chosen randomly from a normal distribution.
+
+See also: [`gen_spaghetti`](@ref), [`spaghetti_fun`](@ref)
+"""
+function gen_one_spaghetti(img_size, τ, len, spread)
+    (a, b) = randn(2)
+
+    c = rand()*(spread-2)+1
+    d = rand()*(spread-2)+1
+    enlarged_img_size = ceil.(Int, img_size .* sqrt(2)) # so that the rotation doesnt make have to extrapolate
+
+    X = ones(enlarged_img_size[1]) * collect(range(c-spread,c,length=enlarged_img_size[2]))'
+    Y = collect(range(d-spread,d,length=enlarged_img_size[1])) * ones(enlarged_img_size[2])'
+
+    rand_rot = Rotate(0:360)
+    crop = CropSize(img_size...)
+    pl = rand_rot |>
+         # ShearX(-5:5) * ShearY(-5:5) |>
+         crop
+
+    X_rot, Y_rot = augment((X, Y), pl);
+
+    img = map((x, y) -> spaghetti_fun(x, y, a, b, τ, len), X_rot, Y_rot)
+end
+
+"""
+    gen_spaghetti(img_size = (200, 200),
+                  τ = 0.2,
+                  len = 30;
+                  count=25,
+                  spread=10)
+
+Generate an image with `count` spaghetti images with the params `τ` (thickness), `len` (length) and `spread`.
+The coordinates `x` and `y` in the equation are scaled from `(-1, 1)` and the `spread` gives the length of interval
+in which the `(-1, 1)` is randomly located. The genereated spaghetti is also randomly rotated.
+
+(Example for spread 10, the interval for `x` and `y` is randomly anywhere between `(-9:1)` and `(-1:9)`)
+
+# Example
+```@example
+# feature-full spaghetti image
+img = gen_spaghetti((256, 256), 0.15, 70, spread=20)
+# feature-less spaghetti image
+img = gen_spaghetti((256, 256), 1, 50, spread=12)
+```
+
+Note: For the exact intensity function see [`gen_one_spaghetti`](@ref)
+
+See also:  [`spaghetti_fun`](@ref)
+"""
+function gen_spaghetti(img_size = (256, 256),
+                       τ = 0.2,
+                       len = 30;
+                       count=25,
+                       spread=10)
+
+    img = zeros(img_size)
+    for _ in 1:count
+        adding_img = gen_one_spaghetti(img_size, τ, len, spread)
+        img = img + adding_img
+    end
+    img = LAP_julia.normalize_to_zero_one(img)
+    return img
+end
+
 
 """
     gen_anhir(base_path = "/Users/MrTrololord/Documents/anhir/";
@@ -213,31 +325,31 @@ end
 """
     gen_init(type::Symbol=:lena; flow_args=[])
 
-Create the usual testing data; img, imgw, flow.
+Create the usual testing data; `img`, `imgw`, `flow` using the given parameters.
 
 # Arguments
 - `img_type::Symbol=:lena`: what base image is used. [Options: `:lena`, `:chess`]
-- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`]
+- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`, `:spaghetti`]
 
 # Keyword Arguments
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
-- `chess_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
+- `img_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
 
 # Example
 ```@example
 # chess image, warped chess image, flow with maximal displacement 20 generated by the `gen_quad_flow` function
 img, imgw, flow = gen_init(:chess, :quad, flow_args=[20])
+
+See also: [`gen_anhir`](@ref), [`gen_lena`](@ref), [`gen_spaghetti`](@ref), [`gen_tiled_flow`](@ref), [`gen_quad_flow`](@ref), [`gen_uniform_flow`](@ref)
 ```
 """
-function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[], chess_args=[])
+function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[], img_args=[])
     if img_type == :lena
         img = gen_lena()
     elseif img_type == :chess
-        if chess_args == []
-            img = gen_chess(50,4)
-        else
-            img = gen_chess((Int64.(chess_args))...)
-        end
+        img = gen_chess((Int64.(img_args))...)
+    elseif img_type == :spaghetti
+        img = gen_spaghetti(img_args...)
     end
 
     if flow_type == :quad

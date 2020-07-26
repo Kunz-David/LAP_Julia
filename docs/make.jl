@@ -2,7 +2,8 @@ push!(LOAD_PATH,"../src/")
 
 using Documenter, LAP_julia, Literate
 
-generated_pages = ["basic_interaction"]
+generated_pages = ["basic_interaction", "registration_functions"]
+local_version = get(ENV, "GITHUB_ACTIONS", nothing) == "true"
 
 for gen_page_name in generated_pages
    EXAMPLE = joinpath(@__DIR__, "src", "man", "examples", gen_page_name * ".jl")
@@ -23,7 +24,6 @@ makedocs(
     pages = ["index.md",
              "Usage" => Any[
                 "Examples" => Any[
-                   "man/examples/examples.md",
                    map(page_name -> joinpath("generated", page_name * ".md"), generated_pages)...
                    ]
                 ],

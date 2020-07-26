@@ -2,7 +2,7 @@
 EditURL = "<unknown>/docs/src/man/examples/basic_interaction.jl"
 ```
 
-# Basic Interaction
+# [Basic Interaction](@id basic_interaction)
 
 [![](https://mybinder.org/badge_logo.svg)](<unknown>/generated/basic_interaction.ipynb)
 [![](https://img.shields.io/badge/show-nbviewer-579ACA.svg)](<unknown>/generated/basic_interaction.ipynb)

@@ -1,4 +1,4 @@
-# Internal Documentation
+# [Internal Documentation](@id private_api)
 
 Documentation for `LAP_julia.jl`'s internal interface.
 

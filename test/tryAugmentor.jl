@@ -10,6 +10,8 @@ Augmentor.augment_impl(pl)
 pl = Rotate(-10:101)
 pl = ElasticDistortion(10, 10, 0.3, 4, 3, true)
 
+img_processed = augment(img, pl); imgshow(img_processed)
+
 img_processed = augment((img, positions), pl); imgshow(img_processed)
 imgshow(img)
 
@@ -290,3 +292,41 @@ foo()
 @info "With debug timings enabled:"
 TimerOutputs.enable_debug_timings(LAP_julia)
 foo()
+
+
+
+## make spaghetti
+using LAP_julia
+
+img = gen_spaghetti((256,256), 0.15, 70, spread=20)
+imgshow(img)
+
+
+img = gen_one_spaghetti((200,200), 0.02, 10)
+imgshow(img)
+
+minimum(img)
+maximum(img)
+
+pl = Rotate(35);
+img_processed = augment(img, pl);
+imgshow(img_processed)
+
+
+img_size = (200,200)
+X = ones(img_size[1]) * collect(range(-1,1,length=img_size[2]))'
+X_rot = augment(X, pl)
+
+
+imgshow(X)
+imgshow(X_rot)
+
+img = rand(200,200)
+pl = Either(1=>FlipX(), 1=>FlipY(), 2=>NoOp()) |>
+            Rotate(0:360) |>
+            ShearX(-5:5) * ShearY(-5:5) |>
+            CropSize(165, 165) |>
+            Zoom(1:0.05:1.2) |>
+            Resize(64, 64)
+
+img_new = augment(img, pl)

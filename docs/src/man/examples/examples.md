@@ -1,4 +1,6 @@
-# Examples
+# OLD Examples
+
+__Please check out the new examples__
 
 ```@contents
 pages = ["examples.md"]

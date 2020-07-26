@@ -13,6 +13,9 @@ using JLD2
 
 df
 
+point_counts = [50, 200, 350, 500, 650, 800, 1100, 1400]
+point_counts = vcat(point_counts, point_counts)
+
 sections = ["reg alg: sp lap"]
 @manipulate for k in slider(1:length(spacings), value=1, label="spacing")
     spacing = spacings[k]
@@ -55,12 +58,14 @@ end
 
         local_df = df[((df.diag_size .== diag_size) .& (df.spacing .== spacing)), :]
 
+        local_point_counts = local_df[:, :point_count]
+
         # get times
         timers = local_df[:, :timer]
         avg_times = map(x -> get_avg_time(get_timer(x, sections)), timers)
 
         subplots_adjust(top=0.9)
-        axs[1].plot(point_counts, avg_times)
+        axs[1].plot(local_point_counts, avg_times)
         xlabel("point count")
         axs[1].set_ylabel("time [s]")
 
@@ -68,22 +73,19 @@ end
         median_dicts = local_df[:, :median_results]
         median_flow_mae = map(dict -> dict["flow_mae"], median_dicts)
 
-        axs[2].plot(point_counts, median_flow_mae)
+        axs[2].plot(local_point_counts, median_flow_mae)
         xlabel("point count")
         axs[2].set_ylabel("mae [pixel]")
 
         # get points found
         points_found = local_df[:, :points_found]
-        axs[3].plot(point_counts, points_found)
+        axs[3].plot(local_point_counts, points_found)
         xlabel("point count")
         axs[3].set_ylabel("points found")
         axs[3].axis("scaled")
     end
     gcf()
 end
-
-
-spacing = 5
 
 
 
