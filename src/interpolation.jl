@@ -1,31 +1,85 @@
 
 using Interpolations, ColorVectorSpace, ImageFiltering, Images, ScatteredInterpolation
 
+
+#TODO edit doc
 """
-    function warp_img(img, dx, dy; border_strat::Symbol=:replicate)
+    warp_img(img::Image, dx, dy; border_strat::Symbol=:replicate)::Image
+    warp_img(img::Image, dx, dy, filling_img::Image)::Image
 
 Warp the image `img` by `dx` in *x* direction and by `dy` in *y* direction.
+`border_strat` indicates how to act when the resulting coordinate outside of bounds of `img`.
 
-`border_strat` indicates how to act when the resulting coordinate outside of bounds of `img`. Values: `:replicate`, `:zeros`.
+# Possible variations:
+- `border_strat == :replicate`: fill with the closest pixel value.
+- `border_strat == :zeros`: fill with zeros.
+- supply a `filling_img` as 3rd argument: fill with the provided image `filling_img`
 
 See also: [`showflow`](@ref), [`imgshowflow`](@ref), [`Flow`](@ref)
 """
-function warp_img(img, dx, dy; border_strat::Symbol=:replicate)
-    itp = Interpolations.interpolate(img, BSpline(Linear()))
+function warp_img(img::Image, dx, dy; border_strat::Symbol=:replicate)::Image
     if border_strat == :replicate
-        etp = Interpolations.extrapolate(itp, Flat()) # added extrapolation
+        return img_warp_replicate(img, dx, dy)
     elseif border_strat == :zeros
-        etp = Interpolations.extrapolate(itp, 0)
+        return warp_img_zeros(img, dx, dy)
     end
+end
+
+function warp_img(img::Image, dx, dy, filling_img::Image)::Image
+    return warp_img_with_filling(img, dx, dy, filling_img)
+end
+
+
+function warp_img_zeros(img::Image, dx, dy)::Image
+    itp = Interpolations.interpolate(img, BSpline(Linear()))
+    etp = Interpolations.extrapolate(itp, 0)
+    inds = indices_spatial(img)
+    rng = extrema.(inds)
+    imgw = similar(img, eltype(itp))
+    for I in CartesianIndices(inds)
+        y, x = Tuple(I) .+ (dy[I], dx[I])
+        imgw[I] = etp(y, x)
+    end
+    return imgw
+end
+
+function warp_img_with_filling(img::Image, dx, dy, filling_img::Image)::Image
+    itp = Interpolations.interpolate(img, BSpline(Linear()))
+    inds = indices_spatial(img)
+    rng = extrema.(inds)
+    imgw = similar(img, eltype(itp))
+    for I in CartesianIndices(inds)
+        imgw[I] = interplate_or_fill(I, dx[I], dy[I], rng, itp, filling_img)
+    end
+    return imgw
+end
+
+@inline function interplate_or_fill(ind, dxi, dyi, rng, itp, filling_img)
+    y, x = (ind[1]+dyi, ind[2]+dxi)
+    if is_in_bounds(y, rng[1]...) && is_in_bounds(x, rng[2]...)
+        return itp(y, x)
+    else
+        return filling_img[ind]
+    end
+end
+
+@inline function is_in_bounds(num, lo, hi)
+    return lo <= num <= hi
+end
+
+function img_warp_replicate(img, dx, dy)
+    itp = Interpolations.interpolate(img, BSpline(Linear()))
     inds = indices_spatial(img)
     rng = extrema.(inds)
     imw = similar(img, eltype(itp))
     for I in CartesianIndices(inds)
-        y, x = Tuple(I) .+ (dy[I], dx[I])
-        imw[I] = etp(y, x)
+        dxi, dyi = dx[I], dy[I]
+        y, x = clamp(I[1]+dyi, rng[1]...), clamp(I[2]+dxi, rng[2]...)
+        imw[I] = itp(y, x)
     end
     return imw
 end
+
 
 meshgrid(x, y) = [repeat(x, outer=length(y)) repeat(y, inner=length(x))]
 meshgrid(x::Real, y::Real) = [repeat(1:x, outer=y) repeat(1:y, inner=x)]

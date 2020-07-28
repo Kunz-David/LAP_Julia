@@ -48,11 +48,11 @@ end
 
 
 """
-    rescale_intensities(image1::Image, image2::Image)
+    rescale!(image1::Image, image2::Image)
 
 Rescale `image1` and `image2` intensities to span the whole `[0, 1]`.
 """
-function rescale_intensities(image1::Image, image2::Image)
+function rescale!(image1::Image, image2::Image)
 
     max_intensity = maximum([image1 image2])
     min_intensity = minimum([image1 image2])
@@ -222,7 +222,8 @@ function lap(target::Image,
         smooth_with_gaussian!(flow_estim, window_half_size, timer=timer)
     end
     @timeit_debug timer "generate source_reg" begin
-        source_reg = warp_img(source, real(flow_estim), imag(flow_estim))
+        source_reg = warp_img(source, -real(flow_estim), -imag(flow_estim))
+        # source_reg = warp_img(source, -real(flow_estim), -imag(flow_estim), target)
     end
     # if display
     #     print_timer(timer)
@@ -294,7 +295,8 @@ function sparse_lap(target,
         end
     end
     @timeit_debug timer "generate source_reg" begin
-        source_reg = warp_img(source, real(full_flow_estim), imag(full_flow_estim))
+        # source_reg = warp_img(source, -real(full_flow_estim), -imag(full_flow_estim))
+        source_reg = warp_img(source, -real(full_flow_estim), -imag(full_flow_estim), target)
     end
     return full_flow_estim, source_reg, flow_estim_at_inds, inds
 end

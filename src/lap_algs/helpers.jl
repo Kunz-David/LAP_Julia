@@ -3,6 +3,7 @@ using ImageFiltering: Fill, KernelFactors.gaussian, centered, kernelfactors, imf
 using LinearAlgebra: qr
 using PyPlot: Figure
 using ComputationalResources, Images
+import SpecialFunctions: erfcinv
 
 # function filt_onebyone!(imgfilt, img, kernel, filter_half_size, points)
 #     padded = padarray(img, Pad(:symmetric, filter_half_size, filter_half_size))
@@ -12,6 +13,82 @@ using ComputationalResources, Images
 #         imfilter!(CPU1(Algorithm.FIRTiled()), imgfilt, padded, kernel, NoPad(), ind_filt)
 #     end
 # end
+
+"""
+    highpass_image(img, window_half_size)
+
+High-pass `img` with a hight-pass filter. This high-pass filter is `1-gaussian`.
+"""
+function highpass_image(img, window_half_size)
+
+    σ = 2 * window_half_size[1]
+
+    gaus = gaussian(σ, 2 * σ + 1)
+
+    filt_img = imfilter(img, kernelfactors((gaus, gaus)), "symmetric")
+    return img .- filt_img
+end
+
+"""
+    mapped_out(flow)
+
+Return a mask that has `true` at the locations where `flow` would take the pixel out bounds of the image size.
+"""
+function mapped_out(flow::Flow)::BitArray{2}
+
+    flow_size = size(flow)
+
+    X = ones(flow_size[1]) * collect(1:flow_size[2])'
+    Y = collect(1:flow_size[1]) * ones(flow_size[2])'
+
+    return ((X .- real.(flow)) .> flow_size[2]) .|
+           ((X .- real.(flow)) .< 1) .|
+           ((Y .- imag.(flow)) .> flow_size[1]) .|
+           ((Y .- imag.(flow)) .< 1)
+end
+
+
+function mapped_out(inds, img)
+    a = indices_spatial(img)
+    rng = extrema.(a)
+    is_in(ind) = is_in_bounds(ind[1], rng[1]...) && is_in_bounds(ind[2], rng[2]...)::Bool
+    return filter(x -> is_in(x), inds)
+end
+
+
+"""
+    estimation_noise_variance(img::Image)
+
+Estimate the noise variance of an image y, by evaluating the Median of its Absolute Difference.
+
+Note: Implementation in matlab by Thierry Blu, the Chinese University of Hong kong, Shatin, Hong Kong
+"""
+function estimation_noise_variance(img::Image)
+    kern = centered([0 1 0;1 -4 1;0 1 0]/sqrt(20))
+    dy = abs.(imfilter(img.*255, kern, Fill(0,kern)))
+    return (median(dy[:])/(erfcinv(0.5)*sqrt(2)))^2
+end
+
+
+"""
+    filter_border_inds(inds, img_size, border_width)
+
+Filter out the CartesianIndices `inds` that are within the `border_width` of an image of size `img_size`.
+"""
+function filter_border_inds(inds, img_size, border_width)
+    ind_mask = trues(length(inds))
+
+    @simd for k in 1:length(inds)
+        if (inds[k][1] < border_width) ||
+            (inds[k][2] < border_width) ||
+            (inds[k][1] >= (img_size[1]-border_width)) ||
+            (inds[k][2] >= (img_size[2]-border_width))
+           ind_mask[k] = false
+       end
+    end
+    return inds[ind_mask]
+end
+
 
 function filt_onebyone!(imgfilt, img, kernel, fhs, points)
     padded = padarray(img, Pad(:symmetric, fhs, fhs))

@@ -118,7 +118,7 @@ showflow(flow)
 ## PF LAP
 timer=TimerOutput("pf lap");
 method_kwargs =Dict(:timer => timer, :display => false, :max_repeats => 1)
-flow_est, source_reg, timer, results = test_registration_alg(pflap, img, imgw, flow, [], method_kwargs, timer=timer);
+flow_est, source_reg, timer, results = test_registration_alg(pflap, img, imgw, flow, method_kwargs=method_kwargs, timer=timer);
 
 @code_warntype pflap(img, imgw, display = false)
 
@@ -574,3 +574,68 @@ end
 
 
 optable(img, imgw, "img", "imgw", "target", "source")
+
+
+function homografy_flow(flow_size, max_magnitude = 10)
+
+    a, b, c = randn(), randn(), randn()
+    α, β, γ = (randn(), randn(), randn()) .* im .+ (randn(), randn(), randn())
+
+    u(x,y)=(α*x + β*y + γ)/(a*x + b*y + c)
+
+    X = ones(flow_size[1]) * collect(range(0,1,length=flow_size[2]))'
+    Y = collect(range(0,1,length=flow_size[1])) * ones(flow_size[2])'
+    A = Y .* im + X
+
+    B = u.(X,Y)
+
+    # max_len = maximum(LAP_julia.vec_len.(B))
+    # B = B .* (max_magnitude/max_len)
+
+end
+
+
+flow = homografy_flow(size(img))
+showflow(flow[215:230, 100:110], skip_count = 0)
+
+
+mean(flow)
+median(real.(flow))
+median(imag.(flow))
+maximum(real.(abs.(flow)))
+maximum(imag.(abs.(flow)))
+
+findall(real.(abs.(flow)) .== maximum(real.(abs.(flow))))
+
+imgshow(imag.(flow), origin_left_bot=true)
+
+
+
+
+flow1 = homografy_flow(size(img))
+showflow(flow1)
+
+imgw = warp_img(img, flow)
+
+imgshow(img)
+imgshow(imgw)
+
+
+timer=TimerOutput("sparse pf lap");
+method_kwargs = Dict(:timer => timer, :display => false, :max_repeats => 1, :point_count => 500, :spacing => 10)
+flow_est, source_reg, timer, results = test_registration_alg(sparse_pflap, img, imgw, flow1, method_kwargs=method_kwargs, timer=timer)
+
+showflow(flow_est)
+
+figs[1][1,1,4]
+
+imgshow(img)
+
+
+
+showflow(flow1)
+showflow(flow_est-flow1)
+
+timer=TimerOutput("pf lap");
+method_kwargs =Dict(:timer => timer, :display => false, :max_repeats => 1)
+flow_est, source_reg, timer, results = test_registration_alg(pflap, img, imgw, flow1, method_kwargs=method_kwargs, timer=timer);

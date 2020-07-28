@@ -24,10 +24,10 @@ using CSV
 #         gray_source = Gray.(source_in)
 #         gray_target = Gray.(target_in)
 #
-#         @testset "rescale_intensities" begin
+#         @testset "rescale!" begin
 #             both((x,y)) = [x[:]; y[:]]
-#             @test maximum(both(LAP_julia.helpers.rescale_intensities(gray_source, gray_target))) == 1
-#             @test minimum(both(LAP_julia.helpers.rescale_intensities(gray_source, gray_target))) == 0
+#             @test maximum(both(LAP_julia.helpers.rescale!(gray_source, gray_target))) == 1
+#             @test minimum(both(LAP_julia.helpers.rescale!(gray_source, gray_target))) == 0
 #         end
 #     end
 # end

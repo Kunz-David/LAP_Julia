@@ -183,6 +183,11 @@ function load_anhir_image_pair(target_path,
 end
 
 
+function load_image_gray(img_path)::Image
+    img = Float64.(Gray.(load(img_path)))
+end
+
+
 """
     gen_lena()
 

@@ -18,6 +18,8 @@ img, imgw, flow = gen_init();
 
 # __These are the differences between the `target` (`img`) and `source` (`imgw`) images.__
 
+imgoverlay(img, imgw, figtitle="Target vs Source")
+
 # ## Full LAP Methods
 
 # These functions are from the algorithms from the paper [Local All-Pass Geometric Deformations](https://www.researchgate.net/publication/320574179_Local_All-Pass_Geometric_Deformations).
@@ -30,10 +32,39 @@ flow_est, source_reg = lap(img, imgw, fhs);
 
 # This gives us a estimation of the flow and the registered source image
 
-# This is what the registered source image looks
+# __This is what the registered source image looks like:__
+imgoverlay(img, source_reg, figtitle="lap: Target vs Registered Source")
 
 # ### [`pflap`](@ref) function
 
 flow_est, source_reg = pflap(img, imgw);
 
 # This gives us a estimation of the flow and the registered source image
+
+# __This is what the registered source image looks like:__
+imgoverlay(img, source_reg, figtitle="pflap: Target vs Registered Source")
+
+# ## Sparse LAP Methods
+
+# These functions are insired by the [`lap`](@ref) and [`pflap`](@ref) functions. The difference being only some displacement vectors are calculated and
+# the result is fit into a global deformation.
+
+# ### [`sparse_lap`](@ref) function
+
+## set a filter half size, which is larger than the default max displacement: 10 used in gen_init
+fhs = 15;
+flow_est, source_reg = lap(img, imgw, fhs);
+
+# This gives us a estimation of the flow and the registered source image
+
+# __This is what the registered source image looks like:__
+imgoverlay(img, source_reg, figtitle="lap: Target vs Registered Source")
+
+# ### [`pflap`](@ref) function
+
+flow_est, source_reg = pflap(img, imgw);
+
+# This gives us a estimation of the flow and the registered source image
+
+# __This is what the registered source image looks like:__
+imgoverlay(img, source_reg, figtitle="pflap: Target vs Registered Source")

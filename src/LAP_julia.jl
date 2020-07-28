@@ -36,6 +36,8 @@ export
     pflap,
     sparse_pflap,
     single_lap_at_points,
+    # Experimental LAP functions
+    sparse_pflap_psnr,
     # Types
     Image,
     Flow,
@@ -45,10 +47,12 @@ export
     warp_img,
     interpolate_flow,
     interpolate_flow_quad,
-    #experimenting
+    # experimenting
     test_registration_alg,
     assess_flow_quality,
-    assess_source_reg_quality
+    assess_source_reg_quality,
+    time_reg_alg
+
 
 
 """
@@ -75,10 +79,11 @@ include("gradient_points.jl")
 include("lap_algs/helpers.jl")
 include("lap_algs/multi.jl")
 include("lap_algs/single.jl")
+include("lap_algs/experimental.jl")
 include("experimenting/speedtest.jl")
 include("experimenting/qualitytest.jl")
 include("experimenting/visualise.jl")
-include("birl.jl")
+# include("birl.jl")
 
 
 loaded() = println("LAP_julia succesfully loaded!")

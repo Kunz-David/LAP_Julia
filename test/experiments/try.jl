@@ -14,7 +14,8 @@ using JLD2
 df
 
 point_counts = [50, 200, 350, 500, 650, 800, 1100, 1400]
-point_counts = vcat(point_counts, point_counts)
+spacings = [5, 7, 10, 14, 18, 22, 26, 30, 36, 40, 50, 60]
+diag_sizes = [400, 550, 700]
 
 sections = ["reg alg: sp lap"]
 @manipulate for k in slider(1:length(spacings), value=1, label="spacing")
