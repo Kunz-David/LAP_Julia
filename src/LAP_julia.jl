@@ -62,7 +62,7 @@ export
 
 Image is a `Matrix` with elements that are `Real`.
 """
-const Image{T} = Matrix{T} where T <: Real
+const Image{T} = Matrix{T} where T
 
 """
     Flow{T} = Matrix{Complex{T}} where T <: Real

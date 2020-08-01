@@ -210,6 +210,33 @@ flow_est
 
 ## tmp
 
+using ArgParse, CSV, TimerOutputs, FileIO, Colors, DataFrames
+using LAP_julia
+
+function save_string_to_file(str, file_path)
+    open(file_path, "w") do io
+        write(io, str)
+    end
+end
+
+function load_image_gray(img_path)
+    img = Float64.(Gray.(load(img_path)))
+end
+
+function save_shift_landmarks(source_landmarks_path, flow, args_dict)
+    source_landmarks_df = CSV.read(source_landmarks_path) |> DataFrame
+    locations = [source_landmarks_df[:, "Y"] source_landmarks_df[:, "X"]]
+    shifted_landmarks = LAP_julia.move_landmarks(locations, flow)
+    shifted_landmarks_df = DataFrame(Column1 = 0:(size(locations,1)-1), X = shifted_landmarks[:,2], Y = shifted_landmarks[:,1])
+    save_path = joinpath(args_dict["output_path"], args_dict["land_warped_fname"])
+    CSV.write(save_path, shifted_landmarks_df)
+end
+
+function save_time(time_in_secs, args_dict)
+    save_string_to_file(string(time_in_secs), joinpath(args_dict["output_path"], args_dict["time_fname"]))
+end
+
+
 args_dict = Dict("img_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/images/artificial_reference.jpg",
                  "imgw_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/images/artificial_moving-affine.jpg",
                  "moving_landmark_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/landmarks/artificial_moving-affine.csv",
@@ -225,7 +252,7 @@ args_dict = Dict("img_path" => joinpath(base_path, "images/COAD_01/scale-5pc/S3.
                  "imgw_path" => joinpath(base_path, "images/COAD_01/scale-5pc/S1.jpg"),
                  "moving_landmark_path" => joinpath(base_path, "landmarks/COAD_01/scale-5pc/S3.csv"),
                  "output_path" => joinpath(base_path, "tmp/"),
-                 "reg_alg" => "sparse_pflap_psnr",
+                 "reg_alg" => "pflap",
                  "time_fname" => "exec_time_in_secs.txt",
                  "land_warped_fname" => "warped_landmarks.csv",
                  "diag_pix" => 500)
@@ -241,35 +268,37 @@ args_dict["reg_alg"] = getfield(LAP_julia, Symbol(args_dict["reg_alg"]))
 target = load_image_gray(args_dict["img_path"])
 source = load_image_gray(args_dict["imgw_path"])
 
-resized_target, target_resize_ratio = LAP_julia.resize_to_diag_size(target, args_dict["diag_pix"])
-resized_source, source_resize_ratio = LAP_julia.resize_to_diag_size(source, args_dict["diag_pix"])
-
-ready_target, ready_source = LAP_julia.pad_images(resized_target, resized_source)
+resized_source, source_resize_ratio = resize_to_diag_size(source, args_dict["diag_pix"])
+resized_target = imresize(target, size(resized_source))
 
 # Take the 3 run of the reg alg, allowing for julia compilation.
 for _ in 1:3
     timer = TimerOutput(string(args_dict["reg_alg"]))
     flow_est, source_reg, timer, time_in_secs = time_reg_alg(args_dict["reg_alg"],
-                                                             ready_target,
-                                                             ready_source,
-                                                             timer=timer,
-                                                             method_kwargs=Dict(:display => false, :timer => timer))
+                                                                resized_target,
+                                                                resized_source,
+                                                                timer=timer,
+                                                                method_kwargs=Dict(:display => false, :timer => timer, :match_source_histogram => true))
     global flow_est, source_reg, timer, time_in_secs
     println()
+
 end
 
 # save time
 save_time(time_in_secs, args_dict)
 
 # rescale flow_est
-flow_est = imresize(flow_est.*(1/source_resize_ratio), ratio=1/source_resize_ratio)
+flow_est = imresize(flow_est.*(1/source_resize_ratio), size(source))
+@assert size(flow_est) == size(source) size(flow_est), size(source)
 
 # move landmarks
 save_shift_landmarks(args_dict["moving_landmark_path"], flow_est, args_dict)
 
-source_landmarks_df = CSV.read(args_dict["moving_landmark_path"]) |> DataFrame
-locations = [source_landmarks_df[:, "Y"] source_landmarks_df[:, "X"]]
-shifted_landmarks = LAP_julia.move_landmarks(locations, flow_est)
+# save source_reg
+colored_source = load_image(args_dict["imgw_path"])
+source_reg = warp_img(colored_source, real.(flow_est), imag.(flow_est))
+save_path = joinpath(args_dict["output_path"], "source_reg.jpg")
+save(save_path, source_reg)
 
 addpoints(locations)
 addpoints(shifted_landmarks)

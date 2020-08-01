@@ -17,7 +17,7 @@ Warp the image `img` by `dx` in *x* direction and by `dy` in *y* direction.
 
 See also: [`showflow`](@ref), [`imgshowflow`](@ref), [`Flow`](@ref)
 """
-function warp_img(img::Image, dx, dy; border_strat::Symbol=:replicate)::Image
+function warp_img(img, dx, dy; border_strat::Symbol=:replicate)
     if border_strat == :replicate
         return img_warp_replicate(img, dx, dy)
     elseif border_strat == :zeros
