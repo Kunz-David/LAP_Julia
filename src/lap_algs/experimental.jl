@@ -128,6 +128,7 @@ function sparse_pflap_psnr(target::Image,
                             println("\tIMPORTANT: all new estim vectors are NaN.")
                         end
                     end
+                    break
                 else
                     @timeit_debug timer "flow interpolation" begin
                         # extract u_est_vecs from the previous estimate and add them to the newly estimated ones
@@ -153,7 +154,7 @@ function sparse_pflap_psnr(target::Image,
                 # if the interpolation estimated a flow 20% larger than the fhs then go to next level
                 if any(vec_len.(u_est_adept .* 1.2) .> fhs)
                     if display
-                        println("\tIMPORTANT: u_est_adept full of NaNs, skipping")
+                        println("\tIMPORTANT: u_est_adept is above size threshold, skipping (max: $(maximum(vec_len.(u_est_adept))), fhs: $fhs)")
                     end
                     break
                 end
@@ -161,8 +162,8 @@ function sparse_pflap_psnr(target::Image,
 
                 # linear interpolation
                 @timeit_debug timer "image interpolation" begin
-                    source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept), target)
-                    # source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept))
+                    # source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept), target)
+                    source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept))
                 end
 
                 # calculate the psnr after warping the source by u_est_adept
