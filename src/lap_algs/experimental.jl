@@ -141,9 +141,17 @@ function sparse_pflap_psnr(target::Image,
                     end
                 end
 
-                # TODO check if u_est_adept isnt a monster
+
                 # if the interpolation failes and returns u_est_adept full of NaNs go next level.
                 if any(isnan.(u_est_adept))
+                    if display
+                        println("\tIMPORTANT: u_est_adept full of NaNs, skipping")
+                    end
+                    break
+                end
+
+                # if the interpolation estimated a flow 20% larger than the fhs then go to next level
+                if any(vec_len.(u_est_adept .* 1.2) .> fhs)
                     if display
                         println("\tIMPORTANT: u_est_adept full of NaNs, skipping")
                     end

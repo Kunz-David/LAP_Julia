@@ -296,9 +296,11 @@ save_shift_landmarks(args_dict["moving_landmark_path"], flow_est, args_dict)
 
 # save source_reg
 colored_source = load_image(args_dict["imgw_path"])
-source_reg = warp_img(colored_source, real.(flow_est), imag.(flow_est))
+source_reg = warp_img(colored_source, -real.(flow_est), -imag.(flow_est))
 save_path = joinpath(args_dict["output_path"], "source_reg.jpg")
 save(save_path, source_reg)
 
 addpoints(locations)
 addpoints(shifted_landmarks)
+
+colorview(Gray, target)
