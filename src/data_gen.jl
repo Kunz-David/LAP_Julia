@@ -159,7 +159,7 @@ function resize_to_diag_size(img, desired_diag_size)
     actual_diag_pixels = sqrt(sum((size(img).^2)))
     resize_ratio = desired_diag_size/actual_diag_pixels
     img = imresize(img, ratio = resize_ratio)
-    return img
+    return img, resize_ratio
 end
 
 """

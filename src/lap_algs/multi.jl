@@ -44,11 +44,11 @@ See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_
 function pflap(target::Image,
                         source::Image;
                         filter_count::Integer=3,
-                        max_repeats::Integer=1,
+                        max_repeats::Integer=3,
                         display::Bool=true,
                         timer::TimerOutput=TimerOutput("pflap"),
                         prefilter::Bool=false,
-                        match_source_histogram::Bool=true,
+                        match_source_histogram::Bool=false,
                         rescale_intensities::Bool=false)
 
     @timeit_debug timer "setup" begin

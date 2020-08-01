@@ -25,12 +25,12 @@ See also: [`sparse_lap`](@ref), [`pflap`](@ref), [`showflow`](@ref), [`single_la
 function sparse_pflap_psnr(target::Image,
                            source::Image;
                            filter_count::Integer=3,
-                           max_repeats::Integer=1,
+                           max_repeats::Integer=3,
                            display::Bool=false,
                            point_count::Int=500,
                            spacing::Int=10,
                            timer::TimerOutput=TimerOutput("sparse pflap"),
-                           match_source_histogram::Bool=true,
+                           match_source_histogram::Bool=false,
                            rescale_intensities::Bool=false)
 
     @timeit_debug timer "setup" begin
@@ -166,7 +166,7 @@ function sparse_pflap_psnr(target::Image,
                     u_est = u_est_adept
                     psnr_before = psnr_after
                     if display
-                        println("\t status: success, repeating filter size")
+                        println("\tstatus: success, repeating filter size")
                     end
                 else
                     # the improvement isn't larger than psnr_threshold -> next filter size
@@ -176,13 +176,13 @@ function sparse_pflap_psnr(target::Image,
                         u_est = u_est_adept
                         psnr_before = psnr_after
                         if display
-                            println("\t status: success, next filter size")
+                            println("\tstatus: success, next filter size")
                             add_figs_sparse_pflap(figs, level, iter_repeat, u_est, new_estim_at_inds, source_reg, level_count, max_repeats, current_inds, fhs)
                         end
                     else
                         # it wasn't an improvement, skip
                         if display
-                            println("\t status: failure, trashing")
+                            println("\tstatus: failure, trashing")
                         end
                     end
                     break # go for next filter size.

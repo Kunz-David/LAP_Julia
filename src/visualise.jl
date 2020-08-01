@@ -25,10 +25,26 @@ rc("image", origin="lower")
 
 Add points to a plot at the locations `inds` optionaly provide `labels`.
 """
-function addpoints(inds; ret::Symbol=:figure, labels=[])
+function addpoints(inds::Array{CartesianIndex{2},1}; ret::Symbol=:figure, labels=[])
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
 
+    ax = PyPlot.scatter(pos_y, pos_x, marker = :x)
+
+    for (k, label) in enumerate(labels)
+        annotate(label, (pos_y[k], pos_x[k]))
+    end
+
+    if ret == :figure
+        return gcf()
+    elseif ret == :pyobject
+        return ax
+    end
+end
+
+function addpoints(locations::Matrix; ret::Symbol=:figure, labels=[])
+    pos_x = map(x -> locations[x, 1], 1:size(locations, 1))
+    pos_y = map(x -> locations[x, 2], 1:size(locations, 1))
     ax = PyPlot.scatter(pos_y, pos_x, marker = :x)
 
     for (k, label) in enumerate(labels)

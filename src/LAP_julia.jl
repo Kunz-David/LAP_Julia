@@ -27,6 +27,8 @@ export
     gen_anhir,
     gen_spaghetti,
     load_anhir_image_pair,
+    gen_anhir,
+    resize_to_diag_size,
     # Main LAP funcitons
     lap,
     sparse_lap,

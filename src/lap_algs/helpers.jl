@@ -113,7 +113,12 @@ function multi_mat_div_using_qr(A, b)
     res = Array{Float64,2}(undef, size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
     @simd for k in axes(A)[3]
-        @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
+        # try
+            @views res[:, k] = qr(A[:, :, k], Val(true)) \ b[:, k]
+        # catch
+            # @info A[:, :, k], b[:, k]
+        # end
+        # @views res[:, k] = A[:, :, k] \ b[:, k]
     end
     return transpose(res)
 end
@@ -260,19 +265,6 @@ end
 
 
 
-
-# TODO: this can be improved by using a cumsum alg
-function window_sum_around_points!(result, pixels, img_size, window, points)
-    # prepare a kernel of ones of the window size
-    ones_arr = centered(ones(window[1]))
-    ones_kernel = kernelfactors((ones_arr, ones_arr))
-
-    # filtering gets a sum of pixels of window size in each coord
-    filt_onebyone!(reshape(result, img_size...), reshape(pixels, img_size), ones_kernel, Int64((window[1]-1)/2), points)
-    # imfilter!(reshape(result, img_size), reshape(pixels, img_size), ones_kernel, "symmetric")
-    return result
-end
-
 function add_at_points(A, B, inds)
     for ind in inds
         if isnan(B[ind])
@@ -318,7 +310,7 @@ are slices from the first 2 dimensions of `A`, the vectors ``d`` are the slices 
 of `b` and ``n`` is the size of the third dimension of `A`.
 Returns the coefficients ``x_n`` as a 2D matrix `coeffs`, where the vectors ``x_n`` are the rows of this matrix.
 
-See also: [`gem3d!`](@ref), [`multi_mat_div2`](@ref)
+See also: [`gem3d!`](@ref), [`multi_mat_div_gem`](@ref)
 """
 function back_substitution3d(A, b)
     row_count = size(A, 1)
@@ -334,7 +326,7 @@ function back_substitution3d(A, b)
 end
 
 """
-    multi_mat_div2(A, b)
+    multi_mat_div_gem(A, b)
 
 Solve the linear systems of equations ``C_n x_n = d_n``, where the matrixes ``C``
 are slices from the first 2 dimensions of `A`, the vectors ``d`` are the slices from the first dimension
@@ -346,7 +338,7 @@ Note: For small matrices ``C``, this is an order of magnitude faster than
 
 See also: [`gem3d!`](@ref), [`back_substitution3d`](@ref)
 """
-function multi_mat_div2(A, b)
+function multi_mat_div_gem(A, b)
     gem3d!(A, b)
     return back_substitution3d(A, b)
 end

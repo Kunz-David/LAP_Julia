@@ -121,7 +121,7 @@ function single_lap(target::Image,
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
     @timeit_debug timer "multli mat div gem" begin
-        @views coeffs = multi_mat_div2(A, b)
+        @views coeffs = multi_mat_div_gem(A, b)
     end
     # adding ones so that all base filters have their coefficients even the first one
     all_coeffs = [ones(pixel_count) coeffs]
@@ -242,8 +242,6 @@ function single_lap_at_points(target::Image,
     dif = reshape(dif, (:, filter_count))
 
     # prepare matrices for linear system of equations
-    # A = zeros(filter_count-1, filter_count-1, pixel_count)
-    # b = zeros(filter_count-1, pixel_count)
     A = similar(target, (filter_count-1, filter_count-1, ind_count))
     b = similar(target, (filter_count-1, ind_count))
 
@@ -264,7 +262,8 @@ function single_lap_at_points(target::Image,
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
     @timeit_debug timer "multi mat div" begin
-        @views coeffs = multi_mat_div_using_qr(A, b)
+        # @views coeffs = multi_mat_div_using_qr(A, b)
+        @views coeffs = multi_mat_div_gem(A, b)
     end
 
     # adding ones so that all base filters have their coefficients even the first one
@@ -305,3 +304,119 @@ end
 #                     (dif[:,:, 3][ind-shift:ind+shift] .* all_coeffs[k, 3]) .^2)
 #     end
 # end
+
+
+
+function single_lap_at_points_float16(target::Image,
+                              source::Image,
+                              filter_half_size::Integer,
+                              window,
+                              inds::Array{CartesianIndex,1};
+                              filter_count::Integer=3,
+                              timer::TimerOutput=TimerOutput("Sparse LAP"),
+                              display::Bool=false)
+
+    image_size = size(target)
+    pixel_count = length(target)
+    ind_count = length(inds)
+    filter_size = 2 * filter_half_size + 1
+
+    # Prepare filters:
+    # Calculate separable filters from basis:
+    sigma::Float16 = (filter_half_size + 2) / 4
+    centered_inds = centered(-filter_half_size:filter_half_size)
+    gaus = gaussian(sigma, filter_size)
+    gaus_der = gaus .* centered_inds .* (-1)/sigma^2
+    gaus_der_flip = reverse(gaus_der, dims=1)
+
+    # prepare 2D filter basis for later use
+    basis = similar(target, (filter_size, filter_size, filter_count))
+
+    # dif = (points of forward image - points of backward image) for each filter
+    dif = similar(target, (image_size..., filter_count))
+
+    @timeit_debug timer "filtering" begin
+        if filter_count == 3
+            # temporary place to store filtered images
+            # tmp_filtered_1 = fill(NaN, image_size)
+            # tmp_filtered_2 = fill(NaN, image_size)
+            tmp_filtered_1 = similar(target)
+            println(eltype(target))
+            println(eltype(tmp_filtered_1))
+            @info eltype(gaus)
+            tmp_filtered_2 = similar(target)
+
+            # basis 1 - (gaus, gaus) both forward and backward
+            kernf_1 = kernelfactors((gaus, gaus))
+            basis[:, :, 1] = broadcast(*, kernf_1...)
+            # filt_onebyone!(tmp_filtered_1, target, kernf_1, filter_half_size, points)
+            # filt_onebyone!(tmp_filtered_2, source, kernf_1, filter_half_size, points)
+            imfilter!(tmp_filtered_1, target, kernf_1, "symmetric")
+            imfilter!(tmp_filtered_2, source, kernf_1, "symmetric")
+            dif[:, :, 1] = tmp_filtered_2 - tmp_filtered_1
+
+            # basis 2 - (gaus, gaus_der_flip) as forward, (gaus, gaus_der) as backward
+            kernf_2f = kernelfactors((gaus, gaus_der_flip))
+            basis[:, :, 2] = broadcast(*, kernf_2f...)
+            # filt_onebyone!(tmp_filtered_1, target, kernf_2f, filter_half_size, points)
+            imfilter!(tmp_filtered_1, target, kernf_2f, "symmetric")
+            kernf_2b = kernelfactors((gaus, gaus_der))
+            # filt_onebyone!(tmp_filtered_2, source, kernf_2b, filter_half_size, points)
+            imfilter!(tmp_filtered_2, source, kernf_2b, "symmetric")
+            dif[:, :, 2] = tmp_filtered_2 - tmp_filtered_1
+
+            # basis 3 - (gaus_der_flip, gaus) as forward, (gaus_der, gaus) as backward
+            kernf_3f = kernelfactors((gaus_der_flip, gaus))
+            basis[:, :, 3] = broadcast(*, kernf_3f...)
+            # filt_onebyone!(tmp_filtered_1, target, kernf_3f, filter_half_size, points)
+            imfilter!(tmp_filtered_1, target, kernf_3f, "symmetric")
+            kernf_3b = kernelfactors((gaus_der, gaus))
+            # filt_onebyone!(tmp_filtered_2, source, kernf_3b, filter_half_size, points)
+            imfilter!(tmp_filtered_2, source, kernf_3b, "symmetric")
+            dif[:, :, 3] = tmp_filtered_2 - tmp_filtered_1
+        end
+    end # "filtering"
+
+    dif = reshape(dif, (:, filter_count))
+
+    # prepare matrices for linear system of equations
+    A = similar(target, (filter_count-1, filter_count-1, ind_count))
+    b = similar(target, (filter_count-1, ind_count))
+
+    @timeit_debug timer "prepare A and b" begin
+        for k in 1:filter_count-1
+            for l in k:filter_count-1
+                @timeit_debug timer "window sum part 1" begin
+                    @views window_sum3_at_inds!(A[k, l, :], dif[:, k+1] .* dif[:, l+1], image_size, window, inds)
+                    A[l, k, :] = A[k, l, :]
+                end
+            end
+            @timeit_debug timer "window sum part 2" begin
+                @views window_sum3_at_inds!(b[k, :], dif[:, k+1] .* dif[:, 1] .* (-1), image_size, window, inds)
+            end
+        end
+    end # "prepare A and b"
+
+    # Perform Gauss elimination on all pixels in parallel:
+    # coeffs will be of shape: pixel_count, filter_count-1
+    @timeit_debug timer "multi mat div" begin
+        # @views coeffs = multi_mat_div_using_qr(A, b)
+        @views coeffs = multi_mat_div_gem(A, b)
+    end
+
+    # adding ones so that all base filters have their coefficients even the first one
+    all_coeffs = [ones(ind_count) coeffs]
+
+    k = (-filter_half_size:filter_half_size)
+
+    # Get the displacement vector field from the filters
+    @timeit_debug timer "calculate flow" begin
+        u_est_at_inds = similar(target, ComplexF16, ind_count)
+        @views u_est_at_inds[:] = -2 .* ((im .* (.-1 .* all_coeffs[:, 3]) ./ all_coeffs[:, 1]) .+ ((.-1 .* all_coeffs[:, 2]) ./ all_coeffs[:, 1]));
+    end # "calculate flow"
+
+    # dont use estimations whose displacement is larger than the filter_half_size
+    displacement_mask = (real(u_est_at_inds).^2 .+ imag(u_est_at_inds).^2) .<= filter_half_size^2
+
+    return u_est_at_inds[displacement_mask], inds[displacement_mask]
+end

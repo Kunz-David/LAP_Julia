@@ -47,6 +47,7 @@ function test_registration_alg(method,
                                method_args=[],
                                display::Bool=true,
                                timer::TimerOutput=TimerOutput("blank"),
+                               only_flow_compare::Bool=true,
                                method_kwargs::Dict=Dict(:timer => timer, :display => display))
     TimerOutputs.enable_debug_timings(LAP_julia)
 
@@ -62,9 +63,13 @@ function test_registration_alg(method,
     # test flow quality
     flow_names_vals_dict = assess_flow_quality(flow.*(-1), flow_est)
     # test source_reg quality
-    img_names_vals_dict = assess_source_reg_quality(target, source_reg)
+    if !only_flow_compare
+        img_names_vals_dict = assess_source_reg_quality(target, source_reg)
+        results = merge(flow_names_vals_dict, img_names_vals_dict)
+    else
+        results = flow_names_vals_dict
+    end
 
-    results = merge(flow_names_vals_dict, img_names_vals_dict)
     results["time"] = runtime
 
     if display

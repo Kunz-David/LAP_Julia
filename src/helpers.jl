@@ -5,6 +5,20 @@ using TimerOutputs
 
 
 """
+    move_landmarks(locations, flow)
+
+Move each `location::Tuple(T,T) where T <: Real` from the `locations` vector using the `flow`.
+"""
+function move_landmarks(locations, flow)
+    itp = Interpolations.interpolate(flow, BSpline(Linear()))
+    shifted_locations = Array{Float64}(undef, size(locations))
+    for k in 1:size(locations, 1)
+        shifted_locations[k,:] .= locations[k,:] .+ [imag(itp(locations[k,:]...)), real(itp(locations[k,:]...))]
+    end
+    return shifted_locations
+end
+
+"""
     pad_images(image1::Image, image2::Image)
 
 Adds zeros to the right and bottom of `image1` and `image2` to make them the same size.
@@ -116,7 +130,7 @@ end
 Calculate the root mean square error in angle between `x` and `y`. Output in degrees.
 """
 function angle_rmse(x, y)
-    @assert eltype(x) == eltype(y)
+    # @assert eltype(x) == eltype(y)
     @assert eltype(x) <: Complex
 
     return sqrt(mse(rad2deg.(angle.(x)), rad2deg.(angle.(y))))

@@ -119,7 +119,6 @@ timer=TimerOutput("sparse pflap psnr reg"); # fix
 method_kwargs =Dict(:timer => timer, :display => true, :max_repeats => 3, :match_source_histogram => false)
 flow_est, source_reg, timer, results, (figs,) = test_registration_alg(sparse_pflap_psnr, img, imgw, flow, method_kwargs=method_kwargs, timer=timer);
 
-
 timer=TimerOutput("sparse lap reg");
 method_kwargs =Dict(:timer => timer, :display => false)
 flow_est, source_reg, timer, results = test_registration_alg(sparse_lap, img, imgw, flow, method_args=[30], method_kwargs=method_kwargs, timer=timer);
@@ -139,3 +138,138 @@ imgshow(img .- source_reg, origin_left_bot = true, figtitle="diff")
 showflow(flow.*(-1), figtitle="target flow")
 showflow(flow_est, figtitle="estimated flow")
 showflow((flow_est .+ flow)[30:end-30, 30:end-30], figtitle="flow diff")
+
+
+###
+
+#anhir loc table subset
+
+base_path = "/Users/MrTrololord/Google_Drive/cvut/bakalarka/anhir/"
+loc_table = CSV.read(base_path * "location_table.csv")
+
+train_rows = loc_table[loc_table[:status] .== "training", :]
+
+#first k rows:
+k = 15
+subset = train_rows[1:k, :]
+
+CSV.write(joinpath(base_path, "subset_table.csv"), subset)
+
+
+
+##
+using LAP_julia, TimerOutputs
+
+target, source = gen_anhir(mutate=true, diag_pixels=500)
+
+imgshow(target)
+imgshow(source)
+
+timer=TimerOutput("pflap reg");
+method_kwargs =Dict(:timer => timer, :display => false)
+flow_est, source_reg, timer, results = time_reg_alg(pflap, target, source, method_kwargs=method_kwargs, timer=timer);
+
+
+timer=TimerOutput("sparse pflap reg");
+method_kwargs =Dict(:timer => timer, :display => false)
+flow_est, source_reg, timer, results = time_reg_alg(sparse_pflap_psnr, target, source, method_kwargs=method_kwargs, timer=timer);
+
+
+imgshow(source_reg)
+
+showflow(flow_est)
+
+A = rand(1234,1234)
+
+@benchmark LAP_julia.resize_to_diag_size(A, 500)
+
+
+flow_est
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## tmp
+
+args_dict = Dict("img_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/images/artificial_reference.jpg",
+                 "imgw_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/images/artificial_moving-affine.jpg",
+                 "moving_landmark_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/BIRL/data-images/landmarks/artificial_moving-affine.csv",
+                 "output_path" => "/Users/MrTrololord/Google_Drive/cvut/bakalarka/LAP_julia/test/outputs/",
+                 "reg_alg" => "sparse_pflap_psnr",
+                 "time_fname" => "exec_time_in_secs.txt",
+                 "land_warped_fname" => "warped_landmarks.csv",
+                 "diag_pix" => 500)
+
+
+base_path = "mount/birl_small/"
+args_dict = Dict("img_path" => joinpath(base_path, "images/COAD_01/scale-5pc/S3.jpg"),
+                 "imgw_path" => joinpath(base_path, "images/COAD_01/scale-5pc/S1.jpg"),
+                 "moving_landmark_path" => joinpath(base_path, "landmarks/COAD_01/scale-5pc/S3.csv"),
+                 "output_path" => joinpath(base_path, "tmp/"),
+                 "reg_alg" => "sparse_pflap_psnr",
+                 "time_fname" => "exec_time_in_secs.txt",
+                 "land_warped_fname" => "warped_landmarks.csv",
+                 "diag_pix" => 500)
+
+
+
+
+println("Running with the arguments:")
+
+println("******ARGS:********")
+args_dict["reg_alg"] = getfield(LAP_julia, Symbol(args_dict["reg_alg"]))
+
+target = load_image_gray(args_dict["img_path"])
+source = load_image_gray(args_dict["imgw_path"])
+
+resized_target, target_resize_ratio = LAP_julia.resize_to_diag_size(target, args_dict["diag_pix"])
+resized_source, source_resize_ratio = LAP_julia.resize_to_diag_size(source, args_dict["diag_pix"])
+
+ready_target, ready_source = LAP_julia.pad_images(resized_target, resized_source)
+
+# Take the 3 run of the reg alg, allowing for julia compilation.
+for _ in 1:3
+    timer = TimerOutput(string(args_dict["reg_alg"]))
+    flow_est, source_reg, timer, time_in_secs = time_reg_alg(args_dict["reg_alg"],
+                                                             ready_target,
+                                                             ready_source,
+                                                             timer=timer,
+                                                             method_kwargs=Dict(:display => false, :timer => timer))
+    global flow_est, source_reg, timer, time_in_secs
+    println()
+end
+
+# save time
+save_time(time_in_secs, args_dict)
+
+# rescale flow_est
+flow_est = imresize(flow_est.*(1/source_resize_ratio), ratio=1/source_resize_ratio)
+
+# move landmarks
+save_shift_landmarks(args_dict["moving_landmark_path"], flow_est, args_dict)
+
+source_landmarks_df = CSV.read(args_dict["moving_landmark_path"]) |> DataFrame
+locations = [source_landmarks_df[:, "Y"] source_landmarks_df[:, "X"]]
+shifted_landmarks = LAP_julia.move_landmarks(locations, flow_est)
+
+addpoints(locations)
+addpoints(shifted_landmarks)

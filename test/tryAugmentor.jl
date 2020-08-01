@@ -253,13 +253,13 @@ function back_substitution3d(A, b)
 end
 
 
-function multi_mat_div2(A, b)
+function multi_mat_div_gem(A, b)
     gem3d!(A, b)
     return back_substitution3d(A, b)
 end
 
 
-coeffs = multi_mat_div2(A, b)
+coeffs = multi_mat_div_gem(A, b)
 
 
 

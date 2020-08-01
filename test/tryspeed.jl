@@ -35,7 +35,7 @@ N = 5
 C = rand(N, N, 12345)
 d = rand(N, 12345)
 
-time4 = @benchmark multi_mat_div2(C, d)
+time4 = @benchmark multi_mat_div_gem(C, d)
 time4 = mean(time4.times)
 
 time5 = @benchmark multi_mat_div(C, d)
@@ -43,7 +43,7 @@ time5 = mean(time5.times)
 
 time5/time4
 
-out4 = multi_mat_div2(C, d)
+out4 = multi_mat_div_gem(C, d)
 out5 = multi_mat_div(C, d)
 
 maximum(abs.(out4-out5)) < 10e-7
@@ -72,8 +72,8 @@ time6/time7
 
 ## multi mat div 2    with views and without
 
-@benchmark (@views multi_mat_div2($C, $d))
-@benchmark multi_mat_div2($C, $d)
+@benchmark (@views multi_mat_div_gem($C, $d))
+@benchmark multi_mat_div_gem($C, $d)
 
 #--> views are better here
 
