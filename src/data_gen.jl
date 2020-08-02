@@ -365,7 +365,7 @@ function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[],
         flow = gen_uniform_flow(size(img), flow_args...)
     end
 
-    imgw = warp_img(img, -real(flow), -imag(flow))
+    imgw = warp_img(img, -real(flow), -imag(flow), border_strat=:zeros)
 
     return img, imgw, flow
 end
