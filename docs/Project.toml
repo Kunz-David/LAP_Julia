@@ -3,6 +3,7 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 LAP_julia = "797d5b5c-2e9a-429f-9c9f-727808915e33"
 Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
 QuartzImageIO = "dca85d43-d64c-5e67-8c65-017450d5d020"
+TimerOutputs = "a759f4b9-e2f1-59dc-863e-4aeb61b1ea8f"
 
 [compat]
 Documenter = "0.24"

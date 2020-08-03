@@ -9,8 +9,8 @@
 
 # First I some testing images:
 
-## using the package
-using LAP_julia;
+## using the package and TimerOutputs
+using LAP_julia, TimerOutputs
 
 ## default arguments:
 img, imgw, flow = gen_init();
