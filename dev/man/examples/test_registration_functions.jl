@@ -41,14 +41,16 @@ flow_est, source_reg, timer, results = test_registration_alg(method,
                                                              timer=timer,
                                                              method_args=method_args,
                                                              only_flow_compare=false, # this adds source reg tests.
-                                                             method_kwargs=method_kwargs)
+                                                             method_kwargs=method_kwargs);
 
 
-# __Check the generated flow and the original flow:__
-showflow(flow.*(-1))
-showflow(flow_est)
+# #### Check the generated flow and the original flow:
+# __Ground Truth:__
+showflow(flow.*(-1), figtitle="Ground Truth")
+# __Estimated Flow:__
+showflow(flow_est, figtitle="Estimated Flow")
 
-# #### Compare it with the [`pflap`](@ref) function
+# ### Compare it with the [`pflap`](@ref) function
 
 method = pflap
 ## same inputs, new timer
@@ -60,12 +62,14 @@ flow_est, source_reg, timer, results = test_registration_alg(method,
                                                              timer=timer,
                                                              method_args=method_args,
                                                              only_flow_compare=false, # this adds source reg tests.
-                                                             method_kwargs=method_kwargs)
+                                                             method_kwargs=method_kwargs);
 
 
-# __Check the generated flow and the original flow:__
-showflow(flow.*(-1))
-showflow(flow_est)
+# #### Check the generated flow and the original flow:
+# __Ground Truth:__
+showflow(flow.*(-1), figtitle="Ground Truth")
+# __Estimated Flow:__
+showflow(flow_est, figtitle="Estimated Flow")
 
 # The [`time_reg_alg`](@ref) is used to time the registration algorithm, when the original flow isn't known.
 
@@ -77,7 +81,6 @@ method = sparse_pflap
 timer = TimerOutput("ALG: " * string(method))
 method_kwargs = Dict(:display => true, :timer => timer, :match_source_histogram => false)
 method_args = []
-
 flow_est, source_reg, timer, results, (figs,) = test_registration_alg(method,
                                                                       img,
                                                                       imgw,
@@ -85,4 +88,4 @@ flow_est, source_reg, timer, results, (figs,) = test_registration_alg(method,
                                                                       timer=timer,
                                                                       method_args=method_args,
                                                                       only_flow_compare=false, # this adds source reg tests.
-                                                                      method_kwargs=method_kwargs)
+                                                                      method_kwargs=method_kwargs);
