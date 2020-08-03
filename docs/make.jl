@@ -2,7 +2,7 @@ push!(LOAD_PATH,"../src/")
 
 using Documenter, LAP_julia, Literate
 
-generated_pages = ["basic_interaction", "registration_functions"]
+generated_pages = ["basic_interaction", "registration_functions", "test_registration_functions"]
 local_version = get(ENV, "GITHUB_ACTIONS", nothing) == "true"
 
 for gen_page_name in generated_pages
@@ -23,9 +23,7 @@ makedocs(
     sitename = "Local All Pass registration in Julia",
     pages = ["index.md",
              "Usage" => Any[
-                "Examples" => Any[
                    map(page_name -> joinpath("generated", page_name * ".md"), generated_pages)...
-                   ]
                 ],
              "Library" => Any[
                 "Public" => "lib/public.md",

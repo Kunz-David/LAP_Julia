@@ -20,16 +20,11 @@ using Pkg; Pkg.add(PackageSpec(url="https://github.com/Kunz-David/LAP_julia"))
 ## Manual Outline
 
 ```@contents
+generated_pages = ["basic_interaction", "registration_functions", "test_registration_functions"]
 Pages = [
-    "man/guide.md",
-    "man/examples.md",
-    "man/syntax.md",
-    "man/doctests.md",
-    "man/hosting.md",
-    "man/latex.md",
-    "man/contributing.md",
+    map(page_name -> joinpath("generated", page_name * ".md"), generated_pages)...
 ]
-Depth = 1
+Depth = 2
 ```
 
 
