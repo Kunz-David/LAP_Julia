@@ -37,7 +37,7 @@ imgoverlay(img, source_reg, figtitle="lap: Target vs Registered Source")
 
 # ### [`pflap`](@ref) function
 
-flow_est, source_reg = pflap(img, imgw);
+flow_est, source_reg = pflap(img, imgw, display=false);
 
 # This gives us a estimation of the flow and the registered source image
 
@@ -46,25 +46,26 @@ imgoverlay(img, source_reg, figtitle="pflap: Target vs Registered Source")
 
 # ## Sparse LAP Methods
 
-# These functions are insired by the [`lap`](@ref) and [`pflap`](@ref) functions. The difference being only some displacement vectors are calculated and
+# These functions are insired by the [`lap`](@ref) and [`pflap`](@ref) functions.
+# The difference being that the displacement vectors are calculated at points of high gradient and
 # the result is fit into a global deformation.
 
 # ### [`sparse_lap`](@ref) function
 
 ## set a filter half size, which is larger than the default max displacement: 10 used in gen_init
 fhs = 15;
-flow_est, source_reg = lap(img, imgw, fhs);
+flow_est, source_reg = sparse_lap(img, imgw, fhs, display=false);
 
 # This gives us a estimation of the flow and the registered source image
 
 # __This is what the registered source image looks like:__
-imgoverlay(img, source_reg, figtitle="lap: Target vs Registered Source")
+imgoverlay(img, source_reg, figtitle="sparse lap: Target vs Registered Source")
 
-# ### [`pflap`](@ref) function
+# ### [`sparse_pflap`](@ref) function
 
-flow_est, source_reg = pflap(img, imgw);
+flow_est, source_reg = sparse_pflap(img, imgw, display=false);
 
 # This gives us a estimation of the flow and the registered source image
 
 # __This is what the registered source image looks like:__
-imgoverlay(img, source_reg, figtitle="pflap: Target vs Registered Source")
+imgoverlay(img, source_reg, figtitle="sparse pflap: Target vs Registered Source")
