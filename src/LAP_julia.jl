@@ -53,12 +53,13 @@ export
     test_registration_alg,
     assess_flow_quality,
     assess_source_reg_quality,
-    time_reg_alg
+    time_reg_alg,
+    sparse_pflap_multi
 
 
 
 """
-    Image{T} = Matrix{T} where T <: Real
+    Image{T} = Matrix{T} where T
 
 Image is a `Matrix` with elements that are `Real`.
 """

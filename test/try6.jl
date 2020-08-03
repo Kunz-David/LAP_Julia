@@ -359,8 +359,8 @@ flow = gen_tiled_flow(size(img))
 imgw = warp_img(img, real(flow), imag(flow))
 
 
-imgshow(img, origin_left_bot=true, figtitle="target")
-imgshow(imgw, origin_left_bot=true, figtitle="source")
+imgshow(img, origin_bot_left=true, figtitle="target")
+imgshow(imgw, origin_bot_left=true, figtitle="source")
 
 max_repeats = 3;
 flow_est, source_reg, figs = sparse_pflap(img, imgw, display=true, max_repeats=max_repeats)
@@ -371,7 +371,7 @@ assess_flow_quality(flow_est, flow)
 
 @manipulate for k in slider(0:max_repeats*size(figs,1), value=1, label="k")
     if k == 0
-        imgshow(imgw, origin_left_bot=true, figtitle="source")
+        imgshow(imgw, origin_bot_left=true, figtitle="source")
     else
         reshape(permuteddimsview(figs, [2, 1, 3]), (:, 4))[k, 2]
     end
@@ -382,8 +382,8 @@ reshape(figs, (:, 5))
 figs[1,1,2]
 
 
-imgshow(source_reg, origin_left_bot=true, figtitle="source_reg")
-imgshow(img, origin_left_bot=true, figtitle="target")
+imgshow(source_reg, origin_bot_left=true, figtitle="source_reg")
+imgshow(img, origin_bot_left=true, figtitle="target")
 
 
 for k in 1:120
@@ -607,7 +607,7 @@ maximum(imag.(abs.(flow)))
 
 findall(real.(abs.(flow)) .== maximum(real.(abs.(flow))))
 
-imgshow(imag.(flow), origin_left_bot=true)
+imgshow(imag.(flow), origin_bot_left=true)
 
 
 

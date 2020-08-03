@@ -49,7 +49,8 @@ function pflap(target::Image,
                         timer::TimerOutput=TimerOutput("pflap"),
                         prefilter::Bool=false,
                         match_source_histogram::Bool=false,
-                        rescale_intensities::Bool=false)
+                        rescale_intensities::Bool=false,
+                        warp_border_strat::Symbol=:fill_img)
 
     @timeit_debug timer "setup" begin
         # convert images to floats
@@ -165,8 +166,11 @@ function pflap(target::Image,
 
                 @timeit_debug timer "image interpolation" begin
                     # linear interpolation
-                    source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept))
-                    # source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept), target, border_strat=:fill_img)
+                    if warp_border_strat != :fill_img
+                        source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept), border_strat=warp_border_strat)
+                    else
+                        source_reg = warp_img(source, -real(u_est_adept), -imag(u_est_adept), target)
+                    end
                 end # "interpolation"
 
                 if prefilter
@@ -264,7 +268,7 @@ function sparse_pflap(target::Image,
                       point_count::Int=500,
                       spacing::Int=10,
                       timer::TimerOutput=TimerOutput("sparse pflap"),
-                      match_source_histogram::Bool=true,
+                      match_source_histogram::Bool=false,
                       rescale_intensities::Bool=false)
 
     @timeit_debug timer "setup" begin
@@ -394,7 +398,7 @@ end
 function add_figs_sparse_pflap(figs, level, iter_repeat, u_est, new_estim_at_inds, source_reg, level_count, max_repeats, current_inds, fhs)
     level_iter_fhs = "(Level: $(string(level))/$(string(level_count))), (Iter: $(string(iter_repeat))/$(string(max_repeats))), (fhs: $fhs)"
     figs[level, iter_repeat, 1] = showflow(u_est, figtitle="U_EST " * level_iter_fhs)
-    figs[level, iter_repeat, 2] = imgshow(source_reg, figtitle="SOURCE_REG " * level_iter_fhs, origin_left_bot=true)
+    figs[level, iter_repeat, 2] = imgshow(source_reg, figtitle="SOURCE_REG " * level_iter_fhs, origin_bot_left=true)
     figs[level, iter_repeat, 3] = showflow(create_sparse_flow_from_sparse(new_estim_at_inds, current_inds, size(u_est)), disp_type=:sparse, figtitle="SPARSE Δ_U " * level_iter_fhs)
     figs[level, iter_repeat, 4] = showflow(create_sparse_flow_from_full(u_est, current_inds), figtitle="u_est_at_points " * level_iter_fhs)
 end

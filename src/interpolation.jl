@@ -178,7 +178,7 @@ See also: [`showflow`](@ref), [`Flow`](@ref), [`interpolate_flow`](@ref), [`inte
 """
 function interpolate_flow_quad(flow_at_inds, inds, flow_size)
     A = make_A(inds)
-    coeffs = A\flow_at_inds
+    coeffs = qr(A, Val(true))\flow_at_inds
     estim_flow = make_flow2(coeffs, flow_size)
 end
 

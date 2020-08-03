@@ -152,12 +152,12 @@ function sparse_pflap_psnr(target::Image,
                 end
 
                 # if the interpolation estimated a flow 20% larger than the fhs then go to next level
-                if any(vec_len.(u_est_adept) .> (fhs*1.3))
-                    if display
-                        println("\tIMPORTANT: u_est_adept is above size threshold, skipping (max: $(maximum(vec_len.(u_est_adept))), fhs: $fhs)")
-                    end
-                    break
-                end
+                # if any(vec_len.(u_est_adept) .> (fhs*1.3))
+                #     if display
+                #         println("\tIMPORTANT: u_est_adept is above size threshold, skipping (max: $(maximum(vec_len.(u_est_adept))), fhs: $fhs)")
+                #     end
+                #     break
+                # end
                 @assert any(.!isnan.(u_est_adept)) count(isnan, u_est_adept), length(u_est_adept)
 
                 # linear interpolation
