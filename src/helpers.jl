@@ -34,19 +34,59 @@ function pad_images(image1::Image, image2::Image)
     end
 
     if (a < c)
-        image1 = [image1; ones(c - a, b)];
+        image1 = [image1; zeros(eltype(image1), c - a, b)];
         a = c
     elseif (a > c)
-        image2 = [image2; ones(a - c, d)];
+        image2 = [image2; zeros(eltype(image2), a - c, d)];
         c = a
     end
 
     if (b < d)
-        image1 = [image1 ones(a, d - b)];
+        image1 = [image1 zeros(eltype(image1), a, d - b)];
     elseif (b > d)
-        image2 = [image2 ones(c, b - d)];
+        image2 = [image2 zeros(eltype(image2), c, b - d)];
     end
     return image1, image2
+end
+
+"""
+    pad_images(image1::Image, image2::Image)
+
+Adds zeros to the right and bottom of `image1` and `image2` to make them the same size. Also create a mask,
+which has zeros at the edges of added zeros.
+"""
+function pad_images_mask(target::Image, source::Image)
+
+    (a, b) = size(target)
+    (c, d) = size(source)
+
+    # if there is nothing to do, end
+    if (a, b) == (c, d)
+        return target, source
+    end
+
+    mask = trues(a > c ? a : c, b > d ? b : d)
+
+    if (a < c)
+        target = [target; zeros(eltype(target), c - a, b)];
+        # add horizontal mask
+        mask[a, :] .= false
+        mask[a+1, :] .= false
+        a = c
+    elseif (a > c)
+        source = [source; zeros(eltype(source), a - c, d)];
+        c = a
+    end
+
+    if (b < d)
+        target = [target zeros(eltype(target), a, d - b)];
+        # add vertical mask
+        mask[:, b] .= false
+        mask[:, b+1] .= false
+    elseif (b > d)
+        source = [source zeros(eltype(source), c, b - d)];
+    end
+    return target, source, mask
 end
 
 """

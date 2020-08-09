@@ -61,7 +61,7 @@ function sparse_pflap_psnr(target::Image,
         @assert ((2^(level_count)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
 
         # displacement init.
-        u_est = Array{Complex{Float64},2}(undef, image_size...)
+        u_est = zeros(ComplexF64, size(target))
 
         # filter half sizes array eg. [16, 8, 4, 2, 1]
         half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count))

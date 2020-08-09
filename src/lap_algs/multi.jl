@@ -268,7 +268,7 @@ function sparse_pflap(target::Image,
                       point_count::Int=500,
                       spacing::Int=10,
                       timer::TimerOutput=TimerOutput("sparse pflap"),
-                      match_source_histogram::Bool=false,
+                      match_source_histogram::Bool=true,
                       rescale_intensities::Bool=false)
 
     @timeit_debug timer "setup" begin
@@ -289,7 +289,7 @@ function sparse_pflap(target::Image,
         end
 
         # pad with zeros if sizes difer.
-        target, source = pad_images(target, source)
+        target, source, mask = pad_images_mask(target, source)
 
         image_size = size(target)
 
@@ -299,7 +299,6 @@ function sparse_pflap(target::Image,
         @assert ((2^(level_count)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
 
         # displacement init.
-        # u_est = Array{Complex{Float64},2}(undef, image_size...)
         u_est = zeros(Complex{Float64}, image_size...)
 
         # filter half sizes array eg. [16, 8, 4, 2, 1]
@@ -314,9 +313,9 @@ function sparse_pflap(target::Image,
 
         #TODO edit
         # get edge points
-        mask = falses(size(target))
-        fhs = 3
-        mask[fhs+1:end-fhs, fhs+1:end-fhs] .= true
+        # mask = falses(size(target))
+        # fhs = 3
+        # mask[fhs+1:end-fhs, fhs+1:end-fhs] .= true
         @timeit_debug timer "find edge points" begin
             inds = find_edge_points(target, spacing=spacing, point_count=point_count, mask=mask)
         end
