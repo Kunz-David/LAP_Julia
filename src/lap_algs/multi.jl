@@ -42,15 +42,15 @@ work of the registration.
 See also: [`single_lap`](@ref), [`imgshow`](@ref),[`imgshowflow`](@ref), [`warp_imgshowflow`](@ref), [`Flow`](@ref)
 """
 function pflap(target::Image,
-                        source::Image;
-                        filter_count::Integer=3,
-                        max_repeats::Integer=3,
-                        display::Bool=true,
-                        timer::TimerOutput=TimerOutput("pflap"),
-                        prefilter::Bool=false,
-                        match_source_histogram::Bool=false,
-                        rescale_intensities::Bool=false,
-                        warp_border_strat::Symbol=:fill_img)
+               source::Image;
+               filter_count::Integer=3,
+               max_repeats::Integer=3,
+               display::Bool=true,
+               timer::TimerOutput=TimerOutput("pflap"),
+               prefilter::Bool=false,
+               match_source_histogram::Bool=true,
+               rescale_intensities::Bool=false,
+               warp_border_strat::Symbol=:fill_img)
 
     @timeit_debug timer "setup" begin
         # convert images to floats
@@ -266,7 +266,7 @@ function sparse_pflap(target::Image,
                       max_repeats::Integer=1,
                       display::Bool=false,
                       point_count::Int=500,
-                      spacing::Int=10,
+                      spacing::Int=13,
                       timer::TimerOutput=TimerOutput("sparse pflap"),
                       match_source_histogram::Bool=true,
                       rescale_intensities::Bool=false)
