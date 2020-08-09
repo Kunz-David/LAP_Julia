@@ -86,7 +86,7 @@ include("lap_algs/experimental.jl")
 include("experimenting/speedtest.jl")
 include("experimenting/qualitytest.jl")
 include("experimenting/visualise.jl")
-# include("birl.jl")
+include("birl.jl")
 
 
 loaded() = println("LAP_julia succesfully loaded!")

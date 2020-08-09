@@ -102,7 +102,7 @@ end
 
 # NOTE: can parallelize
 """
-    multi_mat_div(A, b)
+    multi_mat_div_using_qr(A, b)
 
 Return `E`, where `E[i, :]` is the solutution of the least squares problem ``\\min\\|D_ix - c_i\\|^2`` for each ``D_i``
 and ``c_i``, where ``D_i`` is `A[:, :, i]`, ``c_i`` is `b[:, i]` and ``i`` is the size of the second dimension

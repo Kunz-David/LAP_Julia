@@ -77,7 +77,7 @@ imgoverlay(target, source_reg)
 # imgw_copy = deepcopy(imgw)
 # imgw_copy[LAP_julia.mapped_out(flow)] .= 0
 # imgshow(imgw_copy)
-# imgshow(imgw, origin_bot_left = true)
+# imgshow(imgw, origin_bot = true)
 #
 
 
@@ -129,11 +129,11 @@ flow_est, source_reg, timer, results = test_registration_alg(lap, img, imgw, flo
 
 
 
-imgshow(img, origin_bot_left = true, figtitle="target")
-imgshow(imgw, origin_bot_left = true, figtitle="source")
-imgshow(source_reg, origin_bot_left = true, figtitle="source_reg")
+imgshow(img, origin_bot = true, figtitle="target")
+imgshow(imgw, origin_bot = true, figtitle="source")
+imgshow(source_reg, origin_bot = true, figtitle="source_reg")
 
-imgshow(img .- source_reg, origin_bot_left = true, figtitle="diff")
+imgshow(img .- source_reg, origin_bot = true, figtitle="diff")
 
 showflow(flow.*(-1), figtitle="target flow")
 showflow(flow_est, figtitle="estimated flow")

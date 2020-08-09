@@ -339,6 +339,7 @@ Create the usual testing data; `img`, `imgw`, `flow` using the given parameters.
 # Keyword Arguments
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
 - `img_args=[]`: arguments passed to the img generation function if `:chess` is chosen.
+- `flipped::Bool=false`: the image will be flipped along the horizontal axis, so that the origin is at the bottom.
 
 # Example
 ```@example
@@ -348,13 +349,17 @@ img, imgw, flow = gen_init(:chess, :quad, flow_args=[20])
 See also: [`gen_anhir`](@ref), [`gen_lena`](@ref), [`gen_spaghetti`](@ref), [`gen_tiled_flow`](@ref), [`gen_quad_flow`](@ref), [`gen_uniform_flow`](@ref)
 ```
 """
-function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[], img_args=[])
+function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[], img_args=[], flipped::Bool=false)
     if img_type == :lena
         img = gen_lena()
     elseif img_type == :chess
         img = gen_chess((Int64.(img_args))...)
     elseif img_type == :spaghetti
         img = gen_spaghetti(img_args...)
+    end
+
+    if flipped
+        img = reverse(img, dims=1)
     end
 
     if flow_type == :quad

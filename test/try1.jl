@@ -57,6 +57,8 @@ gaus = ImageFiltering.KernelFactors.gaussian(sigma, filter_size)
 gaus_der = gaus .* centered_inds .* (-1)/sigma^2
 gaus_der_flip = reverse(gaus_der, dims=1)
 
+
+using Plots
 # kernel basis:
 # 1
 kernf1 = kernelfactors((gaus, gaus))

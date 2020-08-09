@@ -172,7 +172,17 @@ Transform an array of `CartersianIndexes` to an array of where each column is a 
 function inds_to_points(inds)
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
-    return transpose([pos_x pos_y])
+    return collect(transpose([pos_x pos_y]))
+end
+
+
+"""
+    points_to_inds(points::Array{Int64,2})
+
+Reverse of the `inds_to_points` function.
+"""
+function points_to_inds(points)
+    return [CartesianIndex(points[1, k], points[2, k]) for k in 1:size(points,2)]
 end
 
 """
@@ -225,7 +235,7 @@ function lap(target::Image,
         @timeit_debug timer "replicating borders" begin
             window_half_size = Int64.((window_size.-(1,1))./2)
             middle_vals = flow_estim[window_half_size[1]+1:end-window_half_size[1],
-                              window_half_size[2]+1:end-window_half_size[2]]
+                                     window_half_size[2]+1:end-window_half_size[2]]
             flow_estim = parent(padarray(middle_vals, Pad(:replicate, window_half_size...)))
         end # "replication borders"
         @timeit_debug timer "inside" begin

@@ -299,7 +299,8 @@ function sparse_pflap(target::Image,
         @assert ((2^(level_count)+1) <= minimum(image_size)) "level number results in a filter larger than the size of the input images."
 
         # displacement init.
-        u_est = Array{Complex{Float64},2}(undef, image_size...)
+        # u_est = Array{Complex{Float64},2}(undef, image_size...)
+        u_est = zeros(Complex{Float64}, image_size...)
 
         # filter half sizes array eg. [16, 8, 4, 2, 1]
         half_size_pyramid = Int64.(2 .^ range(level_count-1, stop=0, length=level_count))
@@ -398,7 +399,7 @@ end
 function add_figs_sparse_pflap(figs, level, iter_repeat, u_est, new_estim_at_inds, source_reg, level_count, max_repeats, current_inds, fhs)
     level_iter_fhs = "(Level: $(string(level))/$(string(level_count))), (Iter: $(string(iter_repeat))/$(string(max_repeats))), (fhs: $fhs)"
     figs[level, iter_repeat, 1] = showflow(u_est, figtitle="U_EST " * level_iter_fhs)
-    figs[level, iter_repeat, 2] = imgshow(source_reg, figtitle="SOURCE_REG " * level_iter_fhs, origin_bot_left=true)
+    figs[level, iter_repeat, 2] = imgshow(source_reg, figtitle="SOURCE_REG " * level_iter_fhs, origin_bot=true)
     figs[level, iter_repeat, 3] = showflow(create_sparse_flow_from_sparse(new_estim_at_inds, current_inds, size(u_est)), disp_type=:sparse, figtitle="SPARSE Δ_U " * level_iter_fhs)
     figs[level, iter_repeat, 4] = showflow(create_sparse_flow_from_full(u_est, current_inds), figtitle="u_est_at_points " * level_iter_fhs)
 end

@@ -19,25 +19,30 @@ savefig("../plots/intro_lena_flow.png")
 
 ## lena reg intro with red rectangle
 using PyCall
+using PyPlot: savefig
 @pyimport matplotlib.patches as patches
 
 function add_rect(ax)
-    rect = patches.Rectangle((100,110),30,30,linewidth=1,edgecolor="r",facecolor="none")
+    rect = patches.Rectangle((90,140),30,30,linewidth=1,edgecolor="r",facecolor="none")
     ax.add_patch(rect)
     return gcf()
 end
 
-img, imgw, flow = gen_init()
+img, imgw, flow = gen_init(:lena, :tiled, flipped=true)
 
-imgshow(img, figtitle="Target")
+imgshow(img, origin_bot=true)
+imgshow(imgw, origin_bot=true)
+showflow(flow)
+
+imgshow(img, figtitle="Image 1", origin_bot=true)
 add_rect(gca())
 savefig("../plots/rect_intro_lena_orig.png")
 
-imgshow(imgw, figtitle="Source")
+imgshow(imgw, figtitle="Image 2", origin_bot=true)
 add_rect(gca())
 savefig("../plots/rect_intro_lena_warped.png")
 
-imgoverlay(img, imgw, figtitle="Blending of Target and Source")
+imgoverlay(img, imgw, figtitle="Blending of Target and Source", origin_bot=true)
 add_rect(gca())
 savefig("../plots/rect_intro_lena_bl_or_movement.png")
 
@@ -46,8 +51,8 @@ add_rect(gca())
 savefig("../plots/rect_intro_lena_flow.png")
 
 # rect disp
-flow[100:130, 110:140]
-showflow(flow[100:130, 110:140], figtitle="Displacement Field of Rectagle")
+flow_rect = flow[140:170, 90:120]
+showflow(flow_rect, figtitle="Displacement Field of Rectangle")
 rect = patches.Rectangle((1,1),30,30,linewidth=1,edgecolor="r",facecolor="none")
 ax = gca()
 ax.add_patch(rect)
