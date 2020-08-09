@@ -60,12 +60,12 @@ function pad_images_mask(target::Image, source::Image)
     (a, b) = size(target)
     (c, d) = size(source)
 
+    mask = trues(a > c ? a : c, b > d ? b : d)
+
     # if there is nothing to do, end
     if (a, b) == (c, d)
-        return target, source
+        return target, source, mask
     end
-
-    mask = trues(a > c ? a : c, b > d ? b : d)
 
     if (a < c)
         target = [target; zeros(eltype(target), c - a, b)];

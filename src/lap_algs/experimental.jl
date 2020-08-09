@@ -30,7 +30,7 @@ function sparse_pflap_psnr(target::Image,
                            point_count::Int=500,
                            spacing::Int=10,
                            timer::TimerOutput=TimerOutput("sparse pflap"),
-                           match_source_histogram::Bool=false,
+                           match_source_histogram::Bool=true,
                            rescale_intensities::Bool=false)
 
     @timeit_debug timer "setup" begin
