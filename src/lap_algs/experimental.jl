@@ -28,7 +28,7 @@ function sparse_pflap_psnr(target::Image,
                            max_repeats::Integer=3,
                            display::Bool=false,
                            point_count::Int=500,
-                           spacing::Int=10,
+                           spacing::Int=13,
                            timer::TimerOutput=TimerOutput("sparse pflap"),
                            match_source_histogram::Bool=true,
                            rescale_intensities::Bool=false)

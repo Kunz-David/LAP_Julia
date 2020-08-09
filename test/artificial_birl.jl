@@ -1,5 +1,6 @@
 
 using LAP_julia: load_H, make_flow_from_H, gen_rand_points
+using DataFrames, CSV
 
 ## create a birl like structure for with the oxford affine dataset
 base_path = "/Users/MrTrololord/Downloads/head_mri/"
@@ -7,110 +8,28 @@ target_images_path = joinpath(base_path, "images", "target")
 target_images_fnames = filter(x -> !isfile(x), readdir(target_images_path))
 target_images_paths = map(fname -> joinpath(target_images_path, fname), target_images_fnames)
 
-
-
-for img_path in target_images_paths
-    @info img_path
-    img = load(img_path)
-    
-end
-
-
-
-
-# all pngs
-image_paths = []
-for folder in folders
-    my_path = joinpath(images_path, folder)
-    @info my_path
-    for file in filter(x -> occursin("png", x), readdir(my_path))
-        push!(image_paths, joinpath(my_path, file))
-    end
-end
-
-# delete png base path
-deleting = "/Users/MrTrololord/Downloads/"
-image_paths_relative = map(x -> replace(x, deleting => ""), image_paths)
-
-
-# get target images --> img1
-target_img_paths = []
-for folder in folders
-    my_path = joinpath(images_path, folder)
-    for file in filter(x -> occursin("img1.png", x), readdir(my_path))
-        push!(target_img_paths, joinpath(my_path, file))
-    end
-end
-
-target_img_paths
-
-
-# paths of target_source_transform triads
-target_source_transform_paths = []
-for folder in folders
-    my_path = joinpath(images_path, folder)
-    for target in filter(x -> occursin("img1.png", x), readdir(my_path))
-        target_path = joinpath(my_path, target)
-        for source in filter(x -> !occursin("img1.png", x) && occursin("png", x), readdir(my_path))
-            source_path = joinpath(my_path, source)
-            img_number = parse(Int, source[end-4])
-            tranform_file = filter(x -> !occursin("img", x) && occursin(string(img_number), x), readdir(my_path))[1]
-            tranform_path = joinpath(my_path, tranform_file)
-            push!(target_source_transform_paths, [target_path, source_path, tranform_path])
-        end
-    end
-end
-target_source_transform_paths = permutedims(hcat(target_source_transform_paths...))
-
-target_source_transform_paths_relative = map(x -> replace(x, deleting => ""), target_source_transform_paths)
-
-
-using DataFrames, CSV
 COUNT = 500
+max_disp = 50
+flow_gen_func(img_size) = gen_quad_flow(img_size, max_disp)
 
-
-# filter target landmarks not it source img
-# create target_landmarks
-for folder in folders
-    target_img = load(joinpath(base_path, "images", folder, "img1.png"))
-    target_lnd_path = joinpath(base_path, "landmarks", folder, "target.csv")
+for (k, target_img_path) in enumerate(target_images_paths)
+    target_img = load(target_img_path)
+    # create save paths
+    target_land_path = joinpath(base_path, "landmarks", "target", "landmarks$(k).csv")
+    source_land_path = joinpath(base_path, "landmarks", "source", "landmarks$(k).csv")
+    source_img_path = joinpath(base_path, "images", "source", "img$(k).png")
+    # generate rand inds in target
     target_inds = gen_rand_points(target_img, COUNT, "Gridded")
-    for k in 2:6
-        # get flow
-        transform_path = joinpath(base_path, "images", folder, "H1to$(k)p")
-        cur_H = LAP_julia.load_H(transform_path)
-        cur_flow = LAP_julia.make_flow_from_H(cur_H, size(target_img))
-        # shift and filter landmarks
-        target_inds = get_valid_landmarks(cur_flow, target_inds)
-    end
-    @info size(target_inds)
-    @info size(target_img)
-    LAP_julia.save_landmarks(target_inds, target_lnd_path)
-end
-
-function get_valid_landmarks(flow, orig_inds)
-    rng = extrema.(indices_spatial(flow))
-    orig_points = transpose(LAP_julia.inds_to_points(orig_inds))
-    moved_points = LAP_julia.move_landmarks(orig_points, flow.*(-1))
-    stayed_in_mask = is_in_bounds.(moved_points[:,1], rng[1]...) .& is_in_bounds.(moved_points[:,2], rng[2]...)
-    filtered_orig_points = orig_points[stayed_in_mask, :]
-    filtered_orig_inds = points_to_inds(transpose(filtered_orig_points))
-end
-
-
-# warp target landmarks to source. and create
-for (k, (target_path, source_path, transform_path)) in enumerate(eachrow(target_source_transform_paths))
-    @info (k, target_path, source_path, transform_path)
-    folder = split(target_path, "/")[7]
-    target_lnd_path = joinpath(base_path, "landmarks", folder, "target.csv")
-    cur_H = LAP_julia.load_H(transform_path)
-    target_img = load(target_path)
-    cur_flow = LAP_julia.make_flow_from_H(cur_H, size(target_img))
-    @info size(cur_flow)
-    img_number = transform_path[end-1]
-    save_path = joinpath(base_path, "landmarks", folder, "source$img_number.csv")
-    @info save_path
-    LAP_julia.save_shift_landmarks(target_lnd_path, cur_flow.*(-1), save_path)
+    cur_flow = flow_gen_func(size(img))
+    # edit target inds and save
+    target_inds = get_valid_landmarks(cur_flow, target_inds)
+    LAP_julia.save_landmarks(target_inds, target_land_path)
+    # warp target inds and save
+    LAP_julia.save_shift_landmarks(target_land_path, cur_flow.*(-1), source_land_path)
+    # create source img
+    source = warp_img(target_img, -real.(cur_flow), -imag.(cur_flow))
+    save(source_img_path, source)
+    @info k target_img_path size(target_inds)
 end
 
 
@@ -120,10 +39,12 @@ tmp_df = CSV.read("/Volumes/davidkunz/Documents/bakalarka/birl_small/dataset_sma
 df = deepcopy(tmp_df)
 delete!(df, 1:size(tmp_df,1))
 
-rename!(df, Symbol.(replace.(string.(names(df)), Ref(" "=> "_"))))
-rename!(df, Symbol.(names(df)))
+# rename!(df, Symbol.(replace.(string.(names(df)), Ref(" "=> "_"))))
+# rename!(df, Symbol.(names(df)))
 
+names(df)
 eltypes(df)
+
 abc = [:a , :b, :c, :d, :e, :f, :g, :h, :i, :j, :k]
 new_df = DataFrame(a = eltypes(df)[1][],
                    b = eltypes(df)[2][],
@@ -146,32 +67,30 @@ function rename_dict_keys(from_name, to_name, dict)
     return new_dict
 end
 
-i = 0
-for folder in folders
-    for k in 2:6
-        global i = i + 1
-        row = Dict{String}{Any}()
-        row["Column1"] = i
-        # images
-        row["Target image"] = joinpath("images", folder, "img1.png")
-        row["Source image"] = joinpath("images", folder, "img$k.png")
-        # lnds
-        row["Target landmarks"] = joinpath("landmarks", folder, "target.csv")
-        row["Source landmarks"] = joinpath("landmarks", folder, "source$k.csv")
-        # sizes
-        source_img = load(joinpath(base_path, "images", folder, "img$k.png"))
-        row["Image size [pixels]"] = string(size(source_img))
-        row["Image diagonal [pixels]"] = round(sqrt(sum(size(source_img).^2)), digits=1)
-        row["status"] = "training"
-        # empty values
-        row["Warped target landmarks"] = missing
-        row["Warped source landmarks"] = missing
-        row["Execution time [minutes]"] = missing
-        global row
+experiment_count = count(x -> !isfile(x), readdir(target_images_path))
 
-        @info rename_dict_keys(names(tmp_df), abc, row)
-        push!(new_df, rename_dict_keys(names(tmp_df), abc, row))
-    end
+
+for k in 1:experiment_count
+    row = Dict{String}{Any}()
+    row["Column1"] = k
+    # images
+    row["Target image"] = joinpath("images", "target", "img$k.png")
+    row["Source image"] = joinpath("images", "source", "img$k.png")
+    # lnds
+    row["Target landmarks"] = joinpath("landmarks", "target", "landmarks$k.csv")
+    row["Source landmarks"] = joinpath("landmarks", "source", "landmarks$k.csv")
+    # sizes
+    source_img = load(joinpath(base_path, "images", "source", "img$k.png"))
+    row["Image size [pixels]"] = string(size(source_img))
+    row["Image diagonal [pixels]"] = round(sqrt(sum(size(source_img).^2)), digits=1)
+    row["status"] = "training"
+    # empty values
+    row["Warped target landmarks"] = missing
+    row["Warped source landmarks"] = missing
+    row["Execution time [minutes]"] = missing
+
+    @info rename_dict_keys(names(tmp_df), abc, row)
+    push!(new_df, rename_dict_keys(names(tmp_df), abc, row))
 end
 
 new_df
