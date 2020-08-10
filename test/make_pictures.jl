@@ -2,18 +2,24 @@
 using FileIO, ImageIO, PyPlot
 
 ## lena reg intro
-img, imgw, flow = gen_init()
+img, imgw, flow = gen_init(flipped=true, flow_args=[30])
 
-imgshow(img, figtitle="Target")
+imgshow(img, figtitle="Target", origin_bot=true)
 savefig("../plots/intro_lena_orig.png")
 
-imgshow(imgw, figtitle="Source")
+imgshow(imgw, figtitle="Source", origin_bot=true)
 savefig("../plots/intro_lena_warped.png")
+#
+# img_viewed = viewimg(imgw)
+# save("../plots/tmp.png", img_viewed)
 
-imgoverlay(img, imgw, figtitle="Blending of Target and Source")
+imgoverlay(img, imgw, figtitle="Blending of Target and Source", origin_bot=true)
 savefig("../plots/intro_lena_bl_or_movement.png")
+overlay = imgoverlay_v2(img, imgw, flipped=true)
+save("../plots/intro_lena_bl_or_movement.png", overlay)
 
-showflow(flow, figtitle="Displacement field")
+
+showflow(flow.*(-1), figtitle="Displacement Field")
 savefig("../plots/intro_lena_flow.png")
 
 
@@ -61,18 +67,21 @@ savefig("../plots/rect_intro_lena_flow_zoom.png")
 
 
 ## lap const displacement
-img, imgw, flow = gen_init(:lena, flow_args=[20, 300])
+img, imgw, flow = gen_init(:lena, :uniform, flow_args=[2+1im, 20], flipped=true)
 
-imgshow(img, figtitle="Target")
+imgshow(img, figtitle="Target", origin_bot=true)
 savefig("../plots/lap_const_lena_orig.png")
 
-imgshow(imgw, figtitle="Source")
+imgshow(imgw, figtitle="Source", origin_bot=true)
 savefig("../plots/lap_const_lena_warped.png")
 
 imgoverlay(img, imgw, figtitle="Blending of Target and Source")
 savefig("../plots/lap_const_lena_bl_or_movement.png")
 
-showflow(flow, figtitle="Constant Displacement field")
+overlay = imgoverlay_v2(img, imgw, flipped=true)
+save("../plots/lap_const_lena_bl_or_movement.png", overlay)
+
+showflow(flow.*(-1), figtitle="Constant Displacement Field")
 savefig("../plots/lap_const_lena_flow.png")
 
 ## Make images for testing

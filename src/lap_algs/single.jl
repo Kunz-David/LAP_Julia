@@ -157,7 +157,7 @@ function single_lap_at_points(target::Image,
                               source::Image,
                               filter_half_size::Integer,
                               window,
-                              inds::Array{CartesianIndex,1};
+                              inds::Array{CartesianIndex{2},1};
                               filter_count::Integer=3,
                               timer::TimerOutput=TimerOutput("Sparse LAP"),
                               display::Bool=false)

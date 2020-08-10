@@ -205,11 +205,11 @@ end
 
 # TODO: sppeeudp
 """
-    inds_to_points(inds::Array{CartesianIndex, 1})
+    inds_to_points(inds::Array{CartesianIndex{2}, 1})
 
 Transform an array of `CartersianIndexes` to an array of where each column is a vector of indices of the input array.
 """
-function inds_to_points(inds)
+function inds_to_points(inds::Array{CartesianIndex{2}, 1})
     pos_x = [ind[1] for ind in inds]
     pos_y = [ind[2] for ind in inds]
     return collect(transpose([pos_x pos_y]))

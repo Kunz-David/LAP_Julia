@@ -100,9 +100,25 @@ function save_shift_landmarks(source_landmarks_path, flow, save_path::String)
     CSV.write(save_path, shifted_landmarks_df)
 end
 
-function save_landmarks(inds, save_path::String)
+function save_landmarks(inds::Array{CartesianIndex{2},1}, save_path::String)
     points = transpose(inds_to_points(inds))
     shifted_landmarks_df = DataFrame(Column1 = 0:(size(points,1)-1), X = points[:,2], Y = points[:,1])
     save_path = joinpath(save_path)
     CSV.write(save_path, shifted_landmarks_df)
+end
+
+function save_landmarks(points, save_path::String)
+    shifted_landmarks_df = DataFrame(Column1 = 0:(size(points,1)-1), X = points[:,2], Y = points[:,1])
+    save_path = joinpath(save_path)
+    CSV.write(save_path, shifted_landmarks_df)
+end
+
+function get_valid_landmarks(flow, orig_inds)
+    rng = extrema.(indices_spatial(flow))
+    orig_points = transpose(LAP_julia.inds_to_points(orig_inds))
+    moved_points = LAP_julia.move_landmarks(orig_points, flow)
+    stayed_in_mask = is_in_bounds.(moved_points[:,1], rng[1]...) .& is_in_bounds.(moved_points[:,2], rng[2]...)
+    filtered_orig_points = orig_points[stayed_in_mask, :]
+    filtered_orig_inds = points_to_inds(transpose(filtered_orig_points))
+    return filtered_orig_inds
 end

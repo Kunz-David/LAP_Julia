@@ -579,7 +579,7 @@ optable(img, imgw, "img", "imgw", "target", "source")
 function homografy_flow(flow_size, max_magnitude = 10)
 
     a, b, c = randn(), randn(), randn()
-    α, β, γ = (randn(), randn(), randn()) .* im .+ (randn(), randn(), randn())
+    α, β, γ = randn(ComplexF64), randn(ComplexF64), randn(ComplexF64)
 
     u(x,y)=(α*x + β*y + γ)/(a*x + b*y + c)
 
@@ -594,13 +594,60 @@ function homografy_flow(flow_size, max_magnitude = 10)
 
 end
 
+rand_uniform(a, b) = rand() * (b-a) + a
+using Distributions
+mu = 0    #The mean of the truncated Normal
+sigma = 1 #The standard deviation of the truncated Normal
+lb = 0    #The truncation lower bound
+ub = 1    #The truncation upper bound
+d = Truncated(Normal(mu, sigma), lb, ub)  #Construct the distribution type
+x = rand(Normal(mu, sigma), 100) #Simulate 100 obs from the truncated Normal
+rand(Normal(mu, 0.2))
+
+function rand_H(flow_size)
+    a = flow_size[1] * 0.4
+    H = [rand(Normal(1, 0.4)) rand(Normal(mu, 0.2)) rand_uniform(-a, a);
+         rand(Normal(mu, 0.2)) rand(Normal(1, 0.4)) rand_uniform(-a, a);
+         rand(Normal(mu, 0.0002)) rand(Normal(mu, 0.0002)) 1.]
+    @info H
+    return H
+end
+
+function gen_homo_flow(flow_size, max_magnitude=10)
+    H = rand_H(flow_size)
+    flow = LAP_julia.make_flow_from_H(H, flow_size)
+    max_len = maximum(LAP_julia.vec_len.(flow))
+    flow = flow .* (max_magnitude/max_len)
+    @assert median(LAP_julia.vec_len.(flow)) > (0.1*max_magnitude) H
+    return flow
+end
+
+flow = gen_homo_flow((123,123), 3)
+showflow(flow)
+
+img = gen_spaghetti(size(flow))
+imgw = warp_img(img, -real.(flow), -imag.(flow))
+
+method = sparse_pflap
+timer = TimerOutput(string(method));
+method_kwargs = Dict(:display => false, :timer => timer, :match_source_histogram => true, :spacing => 8)
+flow_est, source_reg, timer, time_in_secs = test_registration_alg(method, img, imgw, flow.*(-1), timer=method_kwargs[:timer], method_kwargs=method_kwargs);
+
+source_reg_zeros = warp_img(img, -real.(flow_est), -imag.(flow_est), border_strat=:zeros)
+showflow(flow.*(-1))
+showflow(flow_est)
+
+
+
 # (Mat_<float>(3,3) << (1-rng.uniform(-0.05f, 0.05f)),
 # (rng.uniform(-0.03f, 0.03f)), (rng.uniform(10.f, 20.f)),
 # (rng.uniform(-0.03f, 0.03f)), (1-rng.uniform(-0.05f, 0.05f)),(rng.uniform(10.f, 20.f)),
 # (rng.uniform(0.0001f, 0.0003f)), (rng.uniform(0.0001f, 0.0003f)), 1.f);
+img, imgw, flow = gen_init();
 
 
 flow = homografy_flow(size(img))
+showflow(flow)
 showflow(flow[215:230, 100:110], skip_count = 0)
 
 

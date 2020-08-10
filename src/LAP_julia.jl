@@ -12,6 +12,7 @@ export
     showsparseflow,
     addpoints,
     imgoverlay,
+    imgoverlay_v2,
     # useful helpers
     mean,
     classic_alg,
@@ -21,6 +22,7 @@ export
     gen_quad_flow,
     gen_tiled_flow,
     gen_uniform_flow,
+    gen_homo_flow,
     gen_chess,
     gen_init,
     gen_lena,

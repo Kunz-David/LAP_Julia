@@ -1,18 +1,20 @@
 
-using LAP_julia: load_H, make_flow_from_H, gen_rand_points
+using LAP_julia: load_H, make_flow_from_H, gen_rand_points, get_valid_landmarks
 using DataFrames, CSV
 
 ## create a birl like structure for with the oxford affine dataset
-base_path = "/Users/MrTrololord/Downloads/head_mri/"
+base_path = "/Users/MrTrololord/Downloads/head_mri_homography/"
 target_images_path = joinpath(base_path, "images", "target")
 target_images_fnames = filter(x -> !isfile(x), readdir(target_images_path))
 target_images_paths = map(fname -> joinpath(target_images_path, fname), target_images_fnames)
 
 COUNT = 500
-max_disp = 50
-flow_gen_func(img_size) = gen_quad_flow(img_size, max_disp)
+max_disp = 40
+# flow_gen_func(img_size) = gen_quad_flow(img_size, max_disp)
+flow_gen_func(img_size) = gen_homo_flow(img_size, max_disp)
 
-for (k, target_img_path) in enumerate(target_images_paths)
+for target_img_path in target_images_paths
+    k = parse(Int, target_img_path[findfirst(r"[0-9]+", target_img_path)])
     target_img = load(target_img_path)
     # create save paths
     target_land_path = joinpath(base_path, "landmarks", "target", "landmarks$(k).csv")
@@ -20,12 +22,17 @@ for (k, target_img_path) in enumerate(target_images_paths)
     source_img_path = joinpath(base_path, "images", "source", "img$(k).png")
     # generate rand inds in target
     target_inds = gen_rand_points(target_img, COUNT, "Gridded")
-    cur_flow = flow_gen_func(size(img))
+    cur_flow = flow_gen_func(size(target_img))
     # edit target inds and save
-    target_inds = get_valid_landmarks(cur_flow, target_inds)
+    target_inds = LAP_julia.get_valid_landmarks(cur_flow, target_inds)
     LAP_julia.save_landmarks(target_inds, target_land_path)
     # warp target inds and save
-    LAP_julia.save_shift_landmarks(target_land_path, cur_flow.*(-1), source_land_path)
+    source_points = LAP_julia.move_landmarks(transpose(LAP_julia.inds_to_points(target_inds)), cur_flow
+    # rng = extrema.(indices_spatial(cur_flow))
+    # @info source_points[:,1] size(cur_flow) rng
+    # @assert all(LAP_julia.is_in_bounds.(source_points[:,1], rng[1]...) .& LAP_julia.is_in_bounds.(source_points[:,2], rng[2]...))
+    LAP_julia.save_landmarks(source_points, source_land_path)
+    # LAP_julia.save_shift_landmarks(target_land_path, cur_flow.*(-1), source_land_path)
     # create source img
     source = warp_img(target_img, -real.(cur_flow), -imag.(cur_flow))
     save(source_img_path, source)

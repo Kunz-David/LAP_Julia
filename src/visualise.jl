@@ -58,12 +58,41 @@ function addpoints(locations::Matrix; ret::Symbol=:figure, labels=[])
     end
 end
 
+
+"""
+    imgoverlay_v2(orange_img::Image, blue_img::Image)
+
+Show an overlay of the images `orange_img` and `blue_img`, each in the specified colors, to see the differences between them.
+
+See also: [`imgshow`](@ref), [`imgoverlay`](@ref)
+"""
+function imgoverlay_v2(orange_img, blue_img; flipped = false)
+
+    normed_orange_img = orange_img.*(1/extrema(orange_img)[2])
+    normed_blue_img = blue_img.*(1/extrema(blue_img)[2])
+
+    if flipped
+        normed_orange_img = reverse(normed_orange_img, dims=1)
+        normed_blue_img = reverse(normed_blue_img, dims=1)
+    end
+
+    color1 = [1 0.7 0.5]
+    color2 = [0 0.3 0.5]
+
+    a = normed_orange_img
+    b = color1[2].*normed_orange_img .+ color2[2].*normed_blue_img
+    c = color1[3].*normed_orange_img .+ color2[3].*normed_blue_img
+
+    imm = collect(colorview(RGB, a, b, c))
+    return imm
+end
+
 """
     imgoverlay(img1, img2; fig=nothing, figtitle::String="Image overlay", ret::Symbol=:figure)
 
 Show an overlay of the images `img1` and `img2`, each in a different colors, to better see the differences between them.
 
-See also: [`imgshow`](@ref)
+See also: [`imgshow`](@ref), [`imgoverlay_v2`](@ref)
 """
 function imgoverlay(img1, img2; fig=nothing, figtitle::String="Image overlay", ret::Symbol=:figure, origin_bot=false)
 
@@ -128,6 +157,8 @@ function imgshow(img;
         ax.invert_yaxis()
     end
 
+    xlabel("x")
+    ylabel("y")
     title(figtitle)
 
     if ret == :figure
@@ -225,8 +256,8 @@ function showflow(flow::Flow; disp_type::Symbol=:auto, skip_count=nothing, fig=n
 
     # angles='uv' sets the angle of vector by atan2(u,v), angles='xy' draws the vector from (x,y) to (x+u, y+v)
     ax.set_aspect(1.)
-    xlabel("x - real\n\n")
-    ylabel("y - imag")
+    xlabel("x\n\n")
+    ylabel("y")
     title(figtitle)
 
     # ax.invert_yaxis()

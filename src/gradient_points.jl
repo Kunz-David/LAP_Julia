@@ -27,10 +27,11 @@ pixels appart, they are returned as an array of `CartesianIndex`. A `mask` can b
 Note: `sigma` is the gaussian filter used to smooth `img` before looking for gradients.
 """
 function find_edge_points(img::Image;
-                          spacing::Int=35,
-                          point_count::Int=35,
+                          spacing::Int=10,
+                          point_count::Int=500,
                           sigma=1,
-                          mask::BitArray{2}=BitArray{2}(undef, 0,0))
+                          mask::BitArray{2}=BitArray{2}(undef, 0,0),
+                          debug::Bool=false)
 
     # calculate gradient mag
     grad, mag = gradient_magnitude(ImageFiltering.imfilter(img, ImageFiltering.Kernel.gaussian(sigma)))
@@ -55,7 +56,7 @@ function find_edge_points(img::Image;
     image_inds = CartesianIndices(size(mag))
 
     numkpts = 0 # point_count of keypoints found so far
-    kpts = Array{CartesianIndex}(undef, point_count)
+    kpts = Array{CartesianIndex{2}, 1}(undef, point_count)
 
     # go through indices from the largest gradient
     for perm in permutation_array
@@ -79,6 +80,9 @@ function find_edge_points(img::Image;
 
     if numkpts < point_count # shrink array if less keypoints were found
         resize!(kpts, numkpts)
+    end
+    if debug
+        return kpts, mag
     end
     return kpts
 end # function find_keypoints_from_gradients

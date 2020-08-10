@@ -84,20 +84,11 @@ for folder in folders
         cur_H = LAP_julia.load_H(transform_path)
         cur_flow = LAP_julia.make_flow_from_H(cur_H, size(target_img))
         # shift and filter landmarks
-        target_inds = get_valid_landmarks(cur_flow, target_inds)
+        target_inds = LAP_julia.get_valid_landmarks(cur_flow.*(-1), target_inds)
     end
     @info size(target_inds)
     @info size(target_img)
     LAP_julia.save_landmarks(target_inds, target_lnd_path)
-end
-
-function get_valid_landmarks(flow, orig_inds)
-    rng = extrema.(indices_spatial(flow))
-    orig_points = transpose(LAP_julia.inds_to_points(orig_inds))
-    moved_points = LAP_julia.move_landmarks(orig_points, flow.*(-1))
-    stayed_in_mask = is_in_bounds.(moved_points[:,1], rng[1]...) .& is_in_bounds.(moved_points[:,2], rng[2]...)
-    filtered_orig_points = orig_points[stayed_in_mask, :]
-    filtered_orig_inds = points_to_inds(transpose(filtered_orig_points))
 end
 
 

@@ -86,7 +86,7 @@ meshgrid(x::Real, y::Real) = [repeat(1:x, outer=y) repeat(1:y, inner=x)]
 
 """
 interpolate_flow(flow_at_inds,
-                 inds::Array{CartesianIndex, 1},
+                 inds::Array{CartesianIndex{2}, 1},
                  flow_size;
                  method::Symbol=:quad,
                  kwargs=Dict())
@@ -98,7 +98,7 @@ and `method=:rbf` which uses an rbf model. Additional keyword arguments of the c
 See also: [`Flow`](@ref), [`interpolate_flow_quad`](@ref), [`interpolate_flow_rbf`](@ref)
 """
 function interpolate_flow(flow_at_inds,
-                          inds::Array{CartesianIndex, 1},
+                          inds::Array{CartesianIndex{2}, 1},
                           flow_size;
                           method::Symbol=:quad,
                           kwargs=Dict())
@@ -115,7 +115,7 @@ end
 #TODO edit docs
 """
     interpolate_flow_rbf(flow_at_inds,
-                         inds::Array{CartesianIndex, 1},
+                         inds::Array{CartesianIndex{2}, 1},
                          flow_size,
                          rbf_method::T=Multiquadratic(2)) where {T <: ScatteredInterpolation.RadialBasisFunction}
 
@@ -138,7 +138,7 @@ Polyharmonic(k = 1)
 See also: [`showflow`](@ref), [`Flow`](@ref), [`interpolate_flow`](@ref), [`interpolate_flow_quad`](@ref)
 """
 function interpolate_flow_rbf(flow_at_inds,
-                              inds::Array{CartesianIndex, 1},
+                              inds::Array{CartesianIndex{2}, 1},
                               flow_size,
                               rbf_method::T=Multiquadratic(2)) where {T <: ScatteredInterpolation.RadialBasisFunction}
 

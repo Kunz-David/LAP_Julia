@@ -1,5 +1,5 @@
 using TestImages: testimage
-using CSV, FileIO, Images, Colors, Augmentor
+using CSV, FileIO, Images, Colors, Augmentor, Distributions
 
 
 
@@ -112,6 +112,41 @@ function gen_spaghetti(img_size = (256, 256),
     return img
 end
 
+rand_uniform(a, b) = rand() * (b-a) + a
+
+"""
+    rand_H(flow_size)
+
+Generate a semi-random homography transfomration matrix. See the implementation for used constants and distributions.
+
+See also: [`showflow`](@ref), [`gen_tiled_flow`](@ref), [`Flow`](@ref), [`gen_quad_flow`](@ref), [`gen_homo_flow`](@ref)
+"""
+function rand_H(flow_size)
+    a = flow_size[1] * 0.4
+    H = [rand(Normal(1, 0.4)) rand(Normal(0, 0.2)) rand_uniform(-a, a);
+         rand(Normal(0, 0.2)) rand(Normal(1, 0.4)) rand_uniform(-a, a);
+         rand(Normal(0, 0.0002)) rand(Normal(0, 0.0002)) 1.]
+    @info H
+    return H
+end
+
+"""
+    gen_homo_flow(flow_size, max_magnitude=10)
+
+Generate a smoothly varying locally constant random flow of size `img_size` and with a maximal
+displacement of `max_magnitude` using a randomly generated homography matrix.
+
+See also: [`showflow`](@ref), [`gen_tiled_flow`](@ref), [`Flow`](@ref), [`gen_quad_flow`](@ref), [`rand_H`](@ref)
+"""
+function gen_homo_flow(flow_size, max_magnitude=10)
+    H = rand_H(flow_size)
+    flow = LAP_julia.make_flow_from_H(H, flow_size)
+    max_len = maximum(LAP_julia.vec_len.(flow))
+    flow = flow .* (max_magnitude/max_len)
+    @assert median(LAP_julia.vec_len.(flow)) > (0.1*max_magnitude) H
+    return flow
+end
+
 
 """
     gen_anhir(base_path = "/Users/MrTrololord/Documents/anhir/";
@@ -200,7 +235,7 @@ function gen_lena()
 end
 
 """
-    gen_quad_flow(img_size, max_magnitude=20)
+    gen_quad_flow(img_size, max_magnitude=10)
 
 Generate a smoothly varying locally constant random flow of size `img_size` and with a maximal
 displacement of `max_magnitude` using a quadratic function:
@@ -334,7 +369,7 @@ Create the usual testing data; `img`, `imgw`, `flow` using the given parameters.
 
 # Arguments
 - `img_type::Symbol=:lena`: what base image is used. [Options: `:lena`, `:chess`]
-- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`, `:spaghetti`]
+- `flow_type::Symbol=:quad`: what flow generation function is used. [Options: `:tiled`, `:quad`, `:uniform`, `:homo`]
 
 # Keyword Arguments
 - `flow_args=[]`: arguments passed to the flow generation function besides the flow size.
@@ -368,6 +403,8 @@ function gen_init(img_type::Symbol=:lena, flow_type::Symbol=:quad; flow_args=[],
         flow = gen_tiled_flow(size(img), flow_args...)
     elseif flow_type == :uniform
         flow = gen_uniform_flow(size(img), flow_args...)
+    elseif flow_type == :homo
+        flow = gen_homo_flow(size(img), flow_args...)
     end
 
     imgw = warp_img(img, -real(flow), -imag(flow), border_strat=:zeros)
