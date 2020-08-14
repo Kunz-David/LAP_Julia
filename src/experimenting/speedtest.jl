@@ -73,7 +73,7 @@ function test_registration_alg(method,
     results["time"] = runtime
 
     if display
-        print_timer(timer)
+        print_timer(timer, allocations=false)
         println()
         print_dict(results)
     end
@@ -134,7 +134,7 @@ function time_reg_alg(method,
     time_in_secs = TimerOutputs.time(timer[timer.name])/10e8
 
     if display
-        print_timer(timer)
+        print_timer(timer, allocations=false)
     end
 
     if length(outputs) >= 3

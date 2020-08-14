@@ -101,7 +101,7 @@ function single_lap(target::Image,
 
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
-    @timeit_debug timer "multli mat div gem" begin
+    @timeit_debug timer "solve linear systems" begin
         @views coeffs = multi_mat_div_gem(A, b)
     end
     # adding ones so that all base filters have their coefficients even the first one
@@ -242,9 +242,10 @@ function single_lap_at_points(target::Image,
 
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
-    @timeit_debug timer "multi mat div" begin
-        # @views coeffs = multi_mat_div_using_qr(A, b)
+    @timeit_debug timer "solve linear systems" begin
+        # @views coeffs = multi_mat_div_qr(A, b)
         @views coeffs = multi_mat_div_gem(A, b)
+        # @views coeffs = multi_mat_div_qr(A, b)
     end
 
     # adding ones so that all base filters have their coefficients even the first one
@@ -381,7 +382,7 @@ function single_lap_at_points_float16(target::Image,
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
     @timeit_debug timer "multi mat div" begin
-        # @views coeffs = multi_mat_div_using_qr(A, b)
+        # @views coeffs = multi_mat_div_qr(A, b)
         @views coeffs = multi_mat_div_gem(A, b)
     end
 

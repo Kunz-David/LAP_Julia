@@ -102,14 +102,14 @@ end
 
 # NOTE: can parallelize
 """
-    multi_mat_div_using_qr(A, b)
+    multi_mat_div_qr(A, b)
 
 Return `E`, where `E[i, :]` is the solutution of the least squares problem ``\\min\\|D_ix - c_i\\|^2`` for each ``D_i``
 and ``c_i``, where ``D_i`` is `A[:, :, i]`, ``c_i`` is `b[:, i]` and ``i`` is the size of the second dimension
 of `b` and third dimension of `A`. In other words, each row of `E` is the solution to one matrix from `A` and it's
 corresponding vector from `b`.
 """
-function multi_mat_div_using_qr(A, b)
+function multi_mat_div_qr(A, b)
     res = Array{Float64,2}(undef, size(A)[1], size(A)[3])
     # Threads.@threads for j in axes(A, 4) check: (https://stackoverflow.com/questions/57678890/batch-matrix-multiplication-in-julia)
     @simd for k in axes(A)[3]

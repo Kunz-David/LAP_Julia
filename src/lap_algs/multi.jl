@@ -133,7 +133,7 @@ function pflap(target::Image,
                     source_reg_inner = source_reg
                 end
 
-                @timeit_debug timer "LAP" begin
+                @timeit_debug timer "lap" begin
                     Δ_u = single_lap(target_inner, source_reg_inner, filter_half_size, window_size, filter_count, timer=timer)
                 end
 

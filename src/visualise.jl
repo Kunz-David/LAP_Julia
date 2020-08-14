@@ -1,6 +1,6 @@
 
 using PyPlot #: quiver, gcf, figure, imshow, subplots, title, xlabel, ylabel, gca
-using Printf
+using Printf, Colors, Images
 
 # set plot size defaults
 SMALL = 8
@@ -19,6 +19,13 @@ rc("figure", dpi=400)
 rc("savefig", dpi=400)
 rc("image", origin="lower")
 # rcdefaults()
+
+"""
+    viewimg(img)
+
+View image as grayscale in Juno.
+"""
+viewimg(img) = colorview(Gray, img)
 
 """
     addpoints(inds; ret::Symbol=:figure, labels=[])

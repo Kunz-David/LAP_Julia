@@ -13,6 +13,7 @@ export
     addpoints,
     imgoverlay,
     imgoverlay_v2,
+    viewimg,
     # useful helpers
     mean,
     classic_alg,

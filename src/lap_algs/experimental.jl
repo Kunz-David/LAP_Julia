@@ -117,7 +117,7 @@ function sparse_pflap_psnr(target::Image,
                     println("inner loop iter: $iter_repeat")
                     println("\tnon mapped out inds: $(length(current_inds))/$(length(inds)) ")
                 end
-                @timeit_debug timer "single lap at points" begin
+                @timeit_debug timer "sparse lap" begin
                     new_estim_at_inds, current_inds = single_lap_at_points(target, source_reg, fhs, window_size, current_inds, timer=timer, display=display)
                 end
 

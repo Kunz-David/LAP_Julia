@@ -84,6 +84,9 @@ save("../plots/lap_const_lena_bl_or_movement.png", overlay)
 showflow(flow.*(-1), figtitle="Constant Displacement Field")
 savefig("../plots/lap_const_lena_flow.png")
 
+
+smooth = ImageFiltering.Kernel.gaussian(1)
+
 ## Make images for testing
 
 img, imgw, flow = gen_init(:lena, flow_args=[20, 60])
@@ -199,10 +202,23 @@ u_est_sm = LAP_julia.smooth_with_gaussian!(u_est, 20)
 showflow(u_est_sm)
 
 
-vec, edge = LAP_julia.gradient_points.gradient_magnitude(img)
+vec, edge = LAP_julia.gradient_magnitude(img)
 
-imgshow(edge, figtitle="Edge Image")
+imgshow(edge, figtitle="Edge Image", origin_bot=true)
 savefig("../plots/sparse_lap_edge_image.png")
+
+
+inds, mag = find_edge_points(img, spacing=10, point_count=300, debug=true)
+
+imgshow(mag .== 0)
+
+imggg = imgoverlay_v2(edge, mag .== 0, flipped=true)
+
+imgshow(edge, figtitle="Edge Image", origin_bot=true)
+fig = addpoints(inds)
+
+savefig("../plots/sparse_lap_edge_image_with_points.png")
+
 
 ## sparse lap
 
@@ -228,3 +244,45 @@ savefig("../plots/sparse_lap_estimate_interpolated_image.png")
 imgshow(edge, figtitle="Edge Image with Points")
 PyPlot.scatter([ind[2] for ind in inds], [ind[1] for ind in inds], marker = :x); gcf()
 savefig("../plots/sparse_lap_edge_image_with_points.png")
+
+
+
+
+
+img, imgw, flow = gen_init(flipped=true)
+
+inds = find_edge_points(img, point_count= 300)
+
+asd = zeros(size(img))
+
+for ind in inds
+    fill_square!(asd, Tuple(ind), 3, 1)
+end
+
+sum(asd)/length(img)
+
+
+ver = imgoverlay_v2(asd, img, flipped=true)
+save("../plots/convolution_area_small.png", ver)
+
+imgshow(asd, figtitle="Convolution Area", origin_bot = true)
+savefig("../plots/convolution_area.png")
+
+
+function fill_square!(mag, pos, spacing, marker)
+    mag_size = size(mag)
+    for k = (pos[1]-spacing <= 1 ? 1 : pos[1]-spacing) : (pos[1]+spacing >= mag_size[1] ? mag_size[1] : pos[1]+spacing),
+        l = (pos[2]-spacing <= 1 ? 1 : pos[2]-spacing) : (pos[2]+spacing >= mag_size[2] ? mag_size[2] : pos[2]+spacing)
+        mag[k, l] = marker
+    end
+end
+
+
+
+
+N = 20
+A = rand(5,5,N)
+b = rand(5,N)
+
+@time LAP_julia.multi_mat_div_gem(A, b)
+@time LAP_julia.multi_mat_div_qr(A, b)

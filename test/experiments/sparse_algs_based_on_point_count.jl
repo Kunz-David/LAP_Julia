@@ -178,7 +178,7 @@ full_flow_estim, source_reg, flow_estim_at_inds, inds = sparse_lap_filt_one_by_o
 inds
 
 using ImageFiltering: KernelFactors.gaussian
-using LAP_julia: inds_to_points, filt_onebyone!, window_sum3_at_inds!, multi_mat_div_using_qr
+using LAP_julia: inds_to_points, filt_onebyone!, window_sum3_at_inds!, multi_mat_div_qr
 function sparse_lap_filt_one_by_one(target,
                                     source,
                                     fhs,
@@ -306,7 +306,7 @@ function single_lap_at_points_filt_one_by_one(target::Image,
     # Perform Gauss elimination on all pixels in parallel:
     # coeffs will be of shape: pixel_count, filter_count-1
     @timeit_debug timer "multi mat div" begin
-        @views coeffs = multi_mat_div_using_qr(A, b)
+        @views coeffs = multi_mat_div_qr(A, b)
     end
 
     # adding ones so that all base filters have their coefficients even the first one

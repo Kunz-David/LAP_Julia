@@ -3,7 +3,7 @@ using LAP_julia: load_H, make_flow_from_H, gen_rand_points, get_valid_landmarks
 using DataFrames, CSV
 
 ## create a birl like structure for with the oxford affine dataset
-base_path = "/Users/MrTrololord/Downloads/head_mri_homography/"
+base_path = "/Users/MrTrololord/Downloads/mri_head_homography/"
 target_images_path = joinpath(base_path, "images", "target")
 target_images_fnames = filter(x -> !isfile(x), readdir(target_images_path))
 target_images_paths = map(fname -> joinpath(target_images_path, fname), target_images_fnames)
@@ -27,7 +27,7 @@ for target_img_path in target_images_paths
     target_inds = LAP_julia.get_valid_landmarks(cur_flow, target_inds)
     LAP_julia.save_landmarks(target_inds, target_land_path)
     # warp target inds and save
-    source_points = LAP_julia.move_landmarks(transpose(LAP_julia.inds_to_points(target_inds)), cur_flow
+    source_points = LAP_julia.move_landmarks(transpose(LAP_julia.inds_to_points(target_inds)), cur_flow)
     # rng = extrema.(indices_spatial(cur_flow))
     # @info source_points[:,1] size(cur_flow) rng
     # @assert all(LAP_julia.is_in_bounds.(source_points[:,1], rng[1]...) .& LAP_julia.is_in_bounds.(source_points[:,2], rng[2]...))
